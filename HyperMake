@@ -1,0 +1,46 @@
+---
+format: hypermake.v0
+
+name: robotalk
+description: Connect Robotic Components
+
+targets:
+  vendor:
+    description: fetch dependencies for Go pkg
+    watches:
+      - vendor/manifest
+    cmds:
+      - gvt restore
+
+  build-linux-[arch:amd64,armhf]:
+    description: build commands
+    after:
+      - vendor
+    watches:
+      - '**/**/*.go'
+    env:
+      - RELEASE
+    cmds:
+      - build-go.sh $[arch] robotalk ./cmd/robotalk
+
+  build:
+    description: build for all targets
+    after:
+      - 'build-*'
+
+  test:
+    description: run tests
+    after:
+      - vendor
+    always: true
+    cmds:
+      - go test ./engine/...
+
+settings:
+  default-targets:
+    - build
+  exec-target: vendor
+  exec-shell: /bin/bash
+  docker:
+    image: 'robotalks/toolchain:latest'
+    src-volume: /go/src/github.com/robotalks/robotalk
