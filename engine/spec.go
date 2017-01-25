@@ -3,6 +3,7 @@ package engine
 import (
 	"fmt"
 	"path"
+	"reflect"
 	"strings"
 
 	"github.com/easeway/langx.go/errors"
@@ -151,7 +152,7 @@ func (s *Spec) Disconnect() error {
 	for i := len(s.initOrder); i > 0; i-- {
 		group := s.initOrder[i-1]
 		for j := len(group); j > 0; j-- {
-			errs.Add(group[j].disconnect())
+			errs.Add(group[j-1].disconnect())
 		}
 	}
 	pub := s.publication
@@ -170,7 +171,9 @@ func (s *ComponentSpec) ID() string {
 // Endpoints implements mqhub.Component
 func (s *ComponentSpec) Endpoints() []mqhub.Endpoint {
 	if s.Instance != nil {
-		return s.Instance.Endpoints()
+		if stateful, ok := s.Instance.(Stateful); ok {
+			return stateful.Endpoints()
+		}
 	}
 	return nil
 }
@@ -199,6 +202,61 @@ func (s *ComponentSpec) FullID() (id string) {
 func (s *ComponentSpec) ConfigAs(out interface{}) error {
 	conf := &MapConfig{Map: s.Config}
 	return conf.As(out)
+}
+
+// Map maps config, injections, connections to dest struct
+func (s *ComponentSpec) Map(dest interface{}) error {
+	v := reflect.Indirect(reflect.ValueOf(dest))
+	if v.Kind() != reflect.Struct {
+		panic("not a struct")
+	}
+	errs := errors.AggregatedError{}
+	errs.Add(s.ConfigAs(dest))
+	t := v.Type()
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		if f.PkgPath != "" || f.Anonymous { // unexported or anonymous field
+			continue
+		}
+		if f.Type.Kind() != reflect.Interface {
+			continue
+		}
+
+		key := f.Tag.Get("key")
+		if key == "" {
+			continue
+		}
+
+		// map connections
+		if f.Type == reflect.TypeOf((*mqhub.EndpointRef)(nil)).Elem() {
+			if ref, ok := s.ConnectionRefs[key]; ok {
+				v.Field(i).Set(reflect.ValueOf(ref))
+			} else {
+				errs.Add(fmt.Errorf("%s: connection %s unmapped", s.FullID(), key))
+			}
+			continue
+		}
+
+		// otherwise, treat as injection
+		comp := s.ResolvedInjections[key]
+		if comp == nil || comp.Instance == nil {
+			errs.Add(fmt.Errorf("%s: injection %s unmapped", s.FullID(), key))
+			continue
+		}
+		instType := reflect.TypeOf(comp.Instance)
+		fv := v.Field(i)
+		if !fv.CanSet() {
+			panic("field " + f.Name + " must be settable")
+		}
+		if instType.AssignableTo(f.Type) {
+			v.Field(i).Set(reflect.ValueOf(comp.Instance))
+		} else if instType.ConvertibleTo(f.Type) {
+			v.Field(i).Set(reflect.ValueOf(comp.Instance).Convert(f.Type))
+		} else {
+			errs.Add(fmt.Errorf("%s injection %s type mismatch", s.FullID(), key))
+		}
+	}
+	return errs.Aggregate()
 }
 
 func (s *ComponentSpec) init(root *Spec, id string, parent *ComponentSpec) {
@@ -252,8 +310,13 @@ func (s *ComponentSpec) buildDependencies(errs *errors.AggregatedError) {
 }
 
 func (s *ComponentSpec) resolveIDRef(idRef string) *ComponentSpec {
-	spec := s
-	components := spec.Children
+	var components map[string]*ComponentSpec
+	spec := s.Parent
+	if spec != nil {
+		components = spec.Children
+	} else {
+		components = s.Root.Children
+	}
 	if strings.HasPrefix(idRef, "/") {
 		spec = nil
 		components = s.Root.Children
@@ -273,7 +336,10 @@ func (s *ComponentSpec) resolveIDRef(idRef string) *ComponentSpec {
 			if spec == nil {
 				return nil
 			}
-			spec = spec.Parent
+			if spec = spec.Parent; spec == nil {
+				components = s.Root.Children
+				continue
+			}
 		} else {
 			spec = components[id]
 		}
@@ -301,6 +367,10 @@ func (s *ComponentSpec) activate(all map[string]*ComponentSpec) (ready []*Compon
 }
 
 func (s *ComponentSpec) resolveFactory(resolver InstanceFactoryResolver, errs *errors.AggregatedError) {
+	if s.Factory == "" {
+		s.ResolvedFactory = nil
+		return
+	}
 	factory, err := resolver.ResolveInstanceFactory(s.Factory)
 	errs.Add(err)
 	if err == nil && factory == nil {
@@ -324,6 +394,9 @@ func (s *ComponentSpec) resolveConnections(connector mqhub.Connector, errs *erro
 }
 
 func (s *ComponentSpec) connect(errs *errors.AggregatedError) {
+	if s.ResolvedFactory == nil {
+		return
+	}
 	instance, err := s.ResolvedFactory.CreateInstance(s)
 	if !errs.Add(err) {
 		s.Instance = instance

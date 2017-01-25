@@ -4,6 +4,10 @@ import "github.com/robotalks/mqhub.go/mqhub"
 
 // Instance is the instance of component logic
 type Instance interface {
+}
+
+// Stateful defines instances which publishes endpoints
+type Stateful interface {
 	Endpoints() []mqhub.Endpoint
 }
 
@@ -17,6 +21,14 @@ type LifecycleCtl interface {
 type InstanceFactory interface {
 	// CreateInstance creates an instance
 	CreateInstance(*ComponentSpec) (Instance, error)
+}
+
+// InstanceFactoryFunc is func form of InstanceFactory
+type InstanceFactoryFunc func(spec *ComponentSpec) (Instance, error)
+
+// CreateInstance implements InstanceFactory
+func (f InstanceFactoryFunc) CreateInstance(spec *ComponentSpec) (Instance, error) {
+	return f(spec)
 }
 
 // InstanceFactoryResolver resolves instance factory by name
