@@ -1,6 +1,13 @@
 {
 	"version": 0,
 	"dependencies": [
+        {
+            "importpath": "github.com/blackjack/webcam",
+            "repository": "https://github.com/blackjack/webcam",
+            "revision": "103f67083be008ccf451ab9c2e268fb219dc7354",
+            "branch": "master",
+            "notests": true
+        },
 		{
 			"importpath": "github.com/codingbrain/clix.go",
 			"repository": "https://github.com/codingbrain/clix.go",
@@ -25,6 +32,13 @@
 			"branch": "master",
 			"notests": true
 		},
+        {
+            "importpath": "github.com/hybridgroup/gobot",
+            "repository": "https://github.com/hybridgroup/gobot",
+            "revision": "0999c23207fe8cd7ffae1d18685110bd1d8bb226",
+            "branch": "master",
+            "notests": true
+        },
 		{
 			"importpath": "github.com/robotalks/mqhub.go",
 			"repository": "https://github.com/robotalks/mqhub.go",
@@ -41,6 +55,13 @@
 			"branch": "master",
 			"notests": true
 		},
+        {
+            "importpath": "github.com/tarm/goserial",
+            "repository": "https://github.com/tarm/goserial",
+            "revision": "b3440c3c63556c3fd67e915be3b92195bc70294a",
+            "branch": "master",
+            "notests": true
+        },
 		{
 			"importpath": "github.com/stretchr/testify",
 			"repository": "https://github.com/stretchr/testify",
@@ -58,6 +79,22 @@
 			"path": "/ssh/terminal",
 			"notests": true
 		},
+        {
+            "importpath": "golang.org/x/net/websocket",
+            "repository": "https://go.googlesource.com/net",
+            "revision": "4971afdc2f162e82d185353533d3cf16188a9f4e",
+            "branch": "master",
+            "path": "/websocket",
+            "notests": true
+        },
+        {
+            "importpath": "golang.org/x/sys/unix",
+            "repository": "https://go.googlesource.com/sys",
+            "revision": "30237cf4eefd639b184d1f2cb77a581ea0be8947",
+            "branch": "master",
+            "path": "/unix",
+            "notests": true
+        },
 		{
 			"importpath": "gopkg.in/yaml.v2",
 			"repository": "https://gopkg.in/yaml.v2",

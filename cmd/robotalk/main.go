@@ -62,6 +62,10 @@ func main() {
 					},
 				},
 				&flag.Command{
+					Name: "types",
+					Desc: "List all known types",
+				},
+				&flag.Command{
 					Name: "version",
 					Desc: "Show version",
 				},
@@ -72,6 +76,7 @@ func main() {
 	cli.Use(term.NewExt()).
 		Use(bind.NewExt().
 			Bind(&RunCommand{}, "run").
+			Bind(&TypesCommand{}, "types").
 			Bind(&versionCommand{}, "version")).
 		Use(help.NewExt()).
 		Parse().

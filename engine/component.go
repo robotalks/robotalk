@@ -18,12 +18,25 @@ type LifecycleCtl interface {
 	Stop() error
 }
 
-// InstanceType is the factory which creates instances
-type InstanceType interface {
-	// Name returns instance type name
-	Name() string
+// InstanceFactory creates instances
+type InstanceFactory interface {
 	// CreateInstance creates an instance
 	CreateInstance(*ComponentSpec) (Instance, error)
+}
+
+// InstanceFactoryFunc is func form of InstanceFactory
+type InstanceFactoryFunc func(*ComponentSpec) (Instance, error)
+
+// CreateInstance implements InstanceFactory
+func (f InstanceFactoryFunc) CreateInstance(spec *ComponentSpec) (Instance, error) {
+	return f(spec)
+}
+
+// InstanceType is the factory which creates instances
+type InstanceType interface {
+	InstanceFactory
+	// Name returns instance type name
+	Name() string
 }
 
 // InstanceTypeResolver resolves instance type by name
@@ -47,4 +60,32 @@ func RegisterInstanceTypes(types ...InstanceType) {
 	for _, t := range types {
 		InstanceTypes[t.Name()] = t
 	}
+}
+
+// CustomInstanceType is used as template to create instance types
+type CustomInstanceType struct {
+	TypeName string
+	Factory  InstanceFactory
+}
+
+// Name implements InstanceType
+func (t *CustomInstanceType) Name() string {
+	return t.TypeName
+}
+
+// CreateInstance implements InstanceType
+func (t *CustomInstanceType) CreateInstance(spec *ComponentSpec) (Instance, error) {
+	return t.Factory.CreateInstance(spec)
+}
+
+// DefineInstanceType defines a custom instance type
+func DefineInstanceType(name string, factory InstanceFactory) InstanceType {
+	return &CustomInstanceType{TypeName: name, Factory: factory}
+}
+
+// DefineInstanceTypeAndRegister defines a custom instance type and registers it
+func DefineInstanceTypeAndRegister(name string, factory InstanceFactory) InstanceType {
+	t := DefineInstanceType(name, factory)
+	RegisterInstanceTypes(t)
+	return t
 }
