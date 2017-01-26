@@ -4,6 +4,7 @@ import "github.com/robotalks/mqhub.go/mqhub"
 
 // Instance is the instance of component logic
 type Instance interface {
+	Type() InstanceType
 }
 
 // Stateful defines instances which publishes endpoints
@@ -17,40 +18,33 @@ type LifecycleCtl interface {
 	Stop() error
 }
 
-// InstanceFactory creates instances
-type InstanceFactory interface {
+// InstanceType is the factory which creates instances
+type InstanceType interface {
+	// Name returns instance type name
+	Name() string
 	// CreateInstance creates an instance
 	CreateInstance(*ComponentSpec) (Instance, error)
 }
 
-// InstanceFactoryFunc is func form of InstanceFactory
-type InstanceFactoryFunc func(spec *ComponentSpec) (Instance, error)
-
-// CreateInstance implements InstanceFactory
-func (f InstanceFactoryFunc) CreateInstance(spec *ComponentSpec) (Instance, error) {
-	return f(spec)
+// InstanceTypeResolver resolves instance type by name
+type InstanceTypeResolver interface {
+	ResolveInstanceType(name string) (InstanceType, error)
 }
 
-// InstanceFactoryResolver resolves instance factory by name
-type InstanceFactoryResolver interface {
-	ResolveInstanceFactory(name string) (InstanceFactory, error)
+// InstanceTypeRegistry provides a registry for named instance types
+type InstanceTypeRegistry map[string]InstanceType
+
+// ResolveInstanceType implements InstanceTypeResolver
+func (r InstanceTypeRegistry) ResolveInstanceType(name string) (InstanceType, error) {
+	return r[name], nil
 }
 
-// InstanceFactoryRegistry provides a registry for named instance factories
-type InstanceFactoryRegistry struct {
-	Factories map[string]InstanceFactory
-}
+// InstanceTypes is the default registry for all known instance types
+var InstanceTypes = make(InstanceTypeRegistry)
 
-// ResolveInstanceFactory implements InstanceFactoryResolver
-func (r *InstanceFactoryRegistry) ResolveInstanceFactory(name string) (InstanceFactory, error) {
-	return r.Factories[name], nil
-}
-
-// DefaultInstanceFactoryResolver provides the default implementation of
-// InstanceFactoryResolver backed by InstanceFactoryRegistry
-var DefaultInstanceFactoryResolver = &InstanceFactoryRegistry{Factories: make(map[string]InstanceFactory)}
-
-// RegisterInstanceFactory registers a named instance factory
-func RegisterInstanceFactory(name string, factory InstanceFactory) {
-	DefaultInstanceFactoryResolver.Factories[name] = factory
+// RegisterInstanceTypes registers named instance types
+func RegisterInstanceTypes(types ...InstanceType) {
+	for _, t := range types {
+		InstanceTypes[t.Name()] = t
+	}
 }

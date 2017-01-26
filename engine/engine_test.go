@@ -9,23 +9,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type TestFactories map[string]InstanceFactory
+type TestTypes map[string]InstanceType
 
-func (f TestFactories) ResolveInstanceFactory(name string) (InstanceFactory, error) {
+func (f TestTypes) ResolveInstanceType(name string) (InstanceType, error) {
 	return f[name], nil
 }
 
 type tester struct {
-	t         *testing.T
-	assert    *assert.Assertions
-	factories TestFactories
+	t      *testing.T
+	assert *assert.Assertions
+	types  TestTypes
 }
 
 func makeTester(t *testing.T) *tester {
 	return &tester{
-		t:         t,
-		assert:    assert.New(t),
-		factories: make(TestFactories),
+		t:      t,
+		assert: assert.New(t),
+		types:  make(TestTypes),
 	}
 }
 
@@ -102,8 +102,10 @@ func (t *tester) Describe(componentID string) mqhub.Descriptor {
 	return &testDummyDesc{componentID: componentID}
 }
 
-func (t *tester) addFactory(name string, f InstanceFactory) {
-	t.factories[name] = f
+func (t *tester) addTypes(types ...InstanceType) {
+	for _, typ := range types {
+		t.types[typ.Name()] = typ
+	}
 }
 
 func (t *tester) spec(content string) *Spec {
@@ -111,7 +113,7 @@ func (t *tester) spec(content string) *Spec {
 	t.assert.NoError(conf.Load(bytes.NewBufferString(content)))
 	spec, err := ParseSpec(conf)
 	t.assert.NoError(err)
-	spec.FactoryResolver = t.factories
+	spec.TypeResolver = t.types
 	t.assert.NoError(spec.Resolve())
 	t.assert.NoError(spec.Connect(t))
 	return spec
@@ -137,42 +139,53 @@ func (t *specTester) component(id string) *ComponentSpec {
 	return comp
 }
 
+type testInstanceAType struct{}
+
+func (t *testInstanceAType) Name() string { return "test.A" }
+func (t *testInstanceAType) CreateInstance(spec *ComponentSpec) (Instance, error) {
+	inst := &testInstanceA{}
+	return inst, spec.Reflect(inst)
+}
+
+var typeInstanceA = &testInstanceAType{}
+
 type testInstanceA struct {
 	Param string `json:"param"`
 }
 
-func (a *testInstanceA) Start() error {
-	return nil
+func (a *testInstanceA) Type() InstanceType { return typeInstanceA }
+func (a *testInstanceA) Start() error       { return nil }
+func (a *testInstanceA) Stop() error        { return nil }
+
+type testInstanceBType struct{}
+
+func (t *testInstanceBType) Name() string { return "test.B" }
+func (t *testInstanceBType) CreateInstance(spec *ComponentSpec) (Instance, error) {
+	inst := &testInstanceB{}
+	return inst, spec.Reflect(inst)
 }
 
-func (a *testInstanceA) Stop() error {
-	return nil
-}
+var typeInstanceB = &testInstanceBType{}
 
 type testInstanceB struct {
 	Ctl    LifecycleCtl      `key:"a" json:"-"`
 	Remote mqhub.EndpointRef `key:"ref" json:"-"`
 }
 
+func (b *testInstanceB) Type() InstanceType { return typeInstanceB }
+
 func TestSimpleComponents(t *testing.T) {
 	tester := makeTester(t)
-	tester.addFactory("a", InstanceFactoryFunc(func(spec *ComponentSpec) (Instance, error) {
-		inst := &testInstanceA{}
-		return inst, spec.Map(inst)
-	}))
-	tester.addFactory("b", InstanceFactoryFunc(func(spec *ComponentSpec) (Instance, error) {
-		inst := &testInstanceB{}
-		return inst, spec.Map(inst)
-	}))
+	tester.addTypes(typeInstanceA, typeInstanceB)
 	spec := tester.spec(`---
         name: test
         components:
           a:
-            factory: a
+            type: test.A
             config:
               param: test
           b:
-            factory: b
+            type: test.B
             inject:
               a: a
             connect:
@@ -180,11 +193,11 @@ func TestSimpleComponents(t *testing.T) {
           l1:
            components:
              b0:
-               factory: b
+               type: test.B
                inject:
                  a: /a
              b1:
-               factory: b
+               type: test.B
                inject:
                  a: ../a
      `)

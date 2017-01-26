@@ -18,7 +18,7 @@ type Spec struct {
 	Author      string                    `json:"author"`
 	Children    map[string]*ComponentSpec `json:"components"`
 
-	FactoryResolver InstanceFactoryResolver `json:"-"`
+	TypeResolver InstanceTypeResolver `json:"-"`
 
 	initOrder   [][]*ComponentSpec
 	publication mqhub.Publication
@@ -26,7 +26,7 @@ type Spec struct {
 
 // ComponentSpec defines a specific component
 type ComponentSpec struct {
-	Factory     string                    `json:"factory"`
+	TypeName    string                    `json:"type"`
 	Injections  map[string]string         `json:"inject"`
 	Connections map[string]string         `json:"connect"`
 	Children    map[string]*ComponentSpec `json:"components"`
@@ -35,7 +35,7 @@ type ComponentSpec struct {
 	LocalID            string                       `json:"-"`
 	Root               *Spec                        `json:"-"`
 	Parent             *ComponentSpec               `json:"-"`
-	ResolvedFactory    InstanceFactory              `json:"-"`
+	InstanceType       InstanceType                 `json:"-"`
 	Instance           Instance                     `json:"-"`
 	ResolvedInjections map[string]*ComponentSpec    `json:"-"`
 	ConnectionRefs     map[string]mqhub.EndpointRef `json:"-"`
@@ -90,12 +90,12 @@ func (s *Spec) Resolve() error {
 		return err
 	}
 
-	resolver := s.FactoryResolver
+	resolver := s.TypeResolver
 	if resolver == nil {
-		resolver = DefaultInstanceFactoryResolver
+		resolver = InstanceTypes
 	}
 	for _, comp := range s.Children {
-		comp.resolveFactory(resolver, errs)
+		comp.resolveType(resolver, errs)
 	}
 	if err := errs.Aggregate(); err != nil {
 		return err
@@ -204,8 +204,8 @@ func (s *ComponentSpec) ConfigAs(out interface{}) error {
 	return conf.As(out)
 }
 
-// Map maps config, injections, connections to dest struct
-func (s *ComponentSpec) Map(dest interface{}) error {
+// Reflect maps config, injections, connections to dest struct
+func (s *ComponentSpec) Reflect(dest interface{}) error {
 	v := reflect.Indirect(reflect.ValueOf(dest))
 	if v.Kind() != reflect.Struct {
 		panic("not a struct")
@@ -366,19 +366,19 @@ func (s *ComponentSpec) activate(all map[string]*ComponentSpec) (ready []*Compon
 	return
 }
 
-func (s *ComponentSpec) resolveFactory(resolver InstanceFactoryResolver, errs *errors.AggregatedError) {
-	if s.Factory == "" {
-		s.ResolvedFactory = nil
+func (s *ComponentSpec) resolveType(resolver InstanceTypeResolver, errs *errors.AggregatedError) {
+	if s.TypeName == "" {
+		s.InstanceType = nil
 		return
 	}
-	factory, err := resolver.ResolveInstanceFactory(s.Factory)
+	typ, err := resolver.ResolveInstanceType(s.TypeName)
 	errs.Add(err)
-	if err == nil && factory == nil {
-		errs.Add(fmt.Errorf("%s factory unresolved: %s", s.FullID(), s.Factory))
+	if err == nil && typ == nil {
+		errs.Add(fmt.Errorf("%s type unresolved: %s", s.FullID(), s.TypeName))
 	}
-	s.ResolvedFactory = factory
+	s.InstanceType = typ
 	for _, comp := range s.Children {
-		comp.resolveFactory(resolver, errs)
+		comp.resolveType(resolver, errs)
 	}
 }
 
@@ -394,10 +394,10 @@ func (s *ComponentSpec) resolveConnections(connector mqhub.Connector, errs *erro
 }
 
 func (s *ComponentSpec) connect(errs *errors.AggregatedError) {
-	if s.ResolvedFactory == nil {
+	if s.InstanceType == nil {
 		return
 	}
-	instance, err := s.ResolvedFactory.CreateInstance(s)
+	instance, err := s.InstanceType.CreateInstance(s)
 	if !errs.Add(err) {
 		s.Instance = instance
 		if ctl, ok := instance.(LifecycleCtl); ok {
