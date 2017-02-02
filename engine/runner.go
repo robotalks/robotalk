@@ -1,9 +1,11 @@
 package engine
 
 import (
+	"log"
 	"os"
 	"os/signal"
 
+	"github.com/easeway/langx.go/errors"
 	"github.com/robotalks/mqhub.go/mqhub"
 )
 
@@ -11,6 +13,7 @@ import (
 type Runner struct {
 	HubURL    string
 	SpecFile  string
+	Logger    *log.Logger
 	Spec      *Spec
 	Connector mqhub.Connector
 }
@@ -26,6 +29,7 @@ func (r *Runner) Start() error {
 		if err != nil {
 			return err
 		}
+		spec.Logger = r.Logger
 		if err = spec.Resolve(); err != nil {
 			return err
 		}
@@ -38,12 +42,18 @@ func (r *Runner) Start() error {
 		}
 		r.Connector = conn
 	}
+	if err := r.Connector.Connect().Wait(); err != nil {
+		return err
+	}
 	return r.Spec.Connect(r.Connector)
 }
 
 // Stop implements LifecycleCtl
 func (r *Runner) Stop() error {
-	return r.Spec.Disconnect()
+	var errs errors.AggregatedError
+	errs.Add(r.Spec.Disconnect())
+	errs.Add(r.Connector.Close())
+	return errs.Aggregate()
 }
 
 // Run runs the engine
@@ -57,8 +67,15 @@ func (r *Runner) Run() error {
 	return r.Stop()
 }
 
+// LogPrefix is default log prefix
+var LogPrefix = "RoboTalk:> "
+
 // Run is the simple wrapper to run the engine
 func Run(hubURL, specFile string) error {
-	runner := &Runner{HubURL: hubURL, SpecFile: specFile}
+	runner := &Runner{
+		HubURL:   hubURL,
+		SpecFile: specFile,
+		Logger:   log.New(os.Stderr, LogPrefix, log.LstdFlags),
+	}
 	return runner.Run()
 }

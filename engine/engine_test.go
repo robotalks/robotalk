@@ -196,10 +196,14 @@ func TestSimpleComponents(t *testing.T) {
                type: test.B
                inject:
                  a: /a
+               connect:
+                 ref: remote/component/endpoint
              b1:
                type: test.B
                inject:
                  a: ../a
+               connect:
+                 ref: remote/component/endpoint
      `)
 	specT := newSpecTester(t, spec)
 	assert.Equal(t, "test", specT.component("a").Instance.(*testInstanceA).Param)

@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"log"
 	"path"
 	"reflect"
 	"strings"
@@ -19,6 +20,7 @@ type Spec struct {
 	Children    map[string]*ComponentSpec `json:"components"`
 
 	TypeResolver InstanceTypeResolver `json:"-"`
+	Logger       *log.Logger          `json:"-"`
 
 	initOrder   [][]*ComponentSpec
 	publication mqhub.Publication
@@ -163,6 +165,20 @@ func (s *Spec) Disconnect() error {
 	return errs.Aggregate()
 }
 
+// Logf wraps simple printf log
+func (s *Spec) Logf(format string, v ...interface{}) {
+	if l := s.Logger; l != nil {
+		l.Printf(format, v...)
+	}
+}
+
+// Logfln wraps simple printf log with newline
+func (s *Spec) Logfln(format string, v ...interface{}) {
+	if l := s.Logger; l != nil {
+		l.Printf(format+"\n", v...)
+	}
+}
+
 // ID implements mqhub.Identifier
 func (s *ComponentSpec) ID() string {
 	return s.LocalID
@@ -232,7 +248,7 @@ func (s *ComponentSpec) Reflect(dest interface{}) error {
 			if ref, ok := s.ConnectionRefs[key]; ok {
 				v.Field(i).Set(reflect.ValueOf(ref))
 			} else {
-				errs.Add(fmt.Errorf("%s: connection %s unmapped", s.FullID(), key))
+				errs.Add(fmt.Errorf("%s: connection %s unspecified", s.FullID(), key))
 			}
 			continue
 		}
@@ -240,7 +256,7 @@ func (s *ComponentSpec) Reflect(dest interface{}) error {
 		// otherwise, treat as injection
 		comp := s.ResolvedInjections[key]
 		if comp == nil || comp.Instance == nil {
-			errs.Add(fmt.Errorf("%s: injection %s unmapped", s.FullID(), key))
+			errs.Add(fmt.Errorf("%s: injection %s unspecified", s.FullID(), key))
 			continue
 		}
 		instType := reflect.TypeOf(comp.Instance)
@@ -257,6 +273,16 @@ func (s *ComponentSpec) Reflect(dest interface{}) error {
 		}
 	}
 	return errs.Aggregate()
+}
+
+// Logf wraps s.Root.Logf
+func (s *ComponentSpec) Logf(format string, v ...interface{}) {
+	s.Root.Logf(format, v...)
+}
+
+// Logfln wraps s.Root.Logfln
+func (s *ComponentSpec) Logfln(format string, v ...interface{}) {
+	s.Root.Logfln(format, v...)
 }
 
 func (s *ComponentSpec) init(root *Spec, id string, parent *ComponentSpec) {
@@ -369,14 +395,14 @@ func (s *ComponentSpec) activate(all map[string]*ComponentSpec) (ready []*Compon
 func (s *ComponentSpec) resolveType(resolver InstanceTypeResolver, errs *errors.AggregatedError) {
 	if s.TypeName == "" {
 		s.InstanceType = nil
-		return
+	} else {
+		typ, err := resolver.ResolveInstanceType(s.TypeName)
+		errs.Add(err)
+		if err == nil && typ == nil {
+			errs.Add(fmt.Errorf("%s type unresolved: %s", s.FullID(), s.TypeName))
+		}
+		s.InstanceType = typ
 	}
-	typ, err := resolver.ResolveInstanceType(s.TypeName)
-	errs.Add(err)
-	if err == nil && typ == nil {
-		errs.Add(fmt.Errorf("%s type unresolved: %s", s.FullID(), s.TypeName))
-	}
-	s.InstanceType = typ
 	for _, comp := range s.Children {
 		comp.resolveType(resolver, errs)
 	}
@@ -397,10 +423,12 @@ func (s *ComponentSpec) connect(errs *errors.AggregatedError) {
 	if s.InstanceType == nil {
 		return
 	}
+	s.Logfln("%s Initialize", s.FullID())
 	instance, err := s.InstanceType.CreateInstance(s)
 	if !errs.Add(err) {
 		s.Instance = instance
 		if ctl, ok := instance.(LifecycleCtl); ok {
+			s.Logfln("%s Start", s.FullID())
 			s.started = !errs.Add(ctl.Start())
 		}
 	}
@@ -412,6 +440,7 @@ func (s *ComponentSpec) disconnect() error {
 	if inst != nil && s.started {
 		s.started = false
 		if ctl, ok := inst.(LifecycleCtl); ok {
+			s.Logfln("%s Stop", s.FullID())
 			return ctl.Stop()
 		}
 	}
