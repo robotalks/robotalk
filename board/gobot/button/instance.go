@@ -85,7 +85,9 @@ func (s *Instance) run(eventCh chan *gobot.Event) {
 }
 
 // Type is the instance type
-var Type = eng.DefineInstanceTypeAndRegister("gobot.gpio.button",
+var Type = eng.DefineInstanceType("gobot.gpio.button",
 	eng.InstanceFactoryFunc(func(spec *eng.ComponentSpec) (eng.Instance, error) {
 		return NewInstance(spec)
-	}))
+	})).
+	Describe("[GoBot] GPIO Button").
+	Register()

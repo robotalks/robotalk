@@ -171,7 +171,9 @@ func (s *Instance) messageSink() mqhub.MessageSink {
 }
 
 // Type is the instance type
-var Type = eng.DefineInstanceTypeAndRegister("vision.tracker.camera.stepping",
+var Type = eng.DefineInstanceType("vision.tracker.camera.stepping",
 	eng.InstanceFactoryFunc(func(spec *eng.ComponentSpec) (eng.Instance, error) {
 		return NewInstance(spec)
-	}))
+	})).
+	Describe("[Vision] Track Object using Simple Tiny Stepping").
+	Register()

@@ -58,7 +58,9 @@ func (s *Instance) rateObjects(res *utils.Result) {
 }
 
 // Type is the instance type
-var Type = eng.DefineInstanceTypeAndRegister("vision.rate.bysize",
+var Type = eng.DefineInstanceType("vision.rate.bysize",
 	eng.InstanceFactoryFunc(func(spec *eng.ComponentSpec) (eng.Instance, error) {
 		return NewInstance(spec)
-	}))
+	})).
+	Describe("[Vision] Sort Detected Object By Size").
+	Register()

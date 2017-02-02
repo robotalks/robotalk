@@ -71,7 +71,9 @@ func (s *Instance) SetPower(state State) {
 }
 
 // Type is the instance type
-var Type = eng.DefineInstanceTypeAndRegister("gobot.gpio.led",
+var Type = eng.DefineInstanceType("gobot.gpio.led",
 	eng.InstanceFactoryFunc(func(spec *eng.ComponentSpec) (eng.Instance, error) {
 		return NewInstance(spec)
-	}))
+	})).
+	Describe("[GoBot] GPIO LED").
+	Register()

@@ -141,7 +141,8 @@ func (t *specTester) component(id string) *ComponentSpec {
 
 type testInstanceAType struct{}
 
-func (t *testInstanceAType) Name() string { return "test.A" }
+func (t *testInstanceAType) Name() string        { return "test.A" }
+func (t *testInstanceAType) Description() string { return t.Name() }
 func (t *testInstanceAType) CreateInstance(spec *ComponentSpec) (Instance, error) {
 	inst := &testInstanceA{}
 	return inst, spec.Reflect(inst)
@@ -159,7 +160,8 @@ func (a *testInstanceA) Stop() error        { return nil }
 
 type testInstanceBType struct{}
 
-func (t *testInstanceBType) Name() string { return "test.B" }
+func (t *testInstanceBType) Name() string        { return "test.B" }
+func (t *testInstanceBType) Description() string { return t.Name() }
 func (t *testInstanceBType) CreateInstance(spec *ComponentSpec) (Instance, error) {
 	inst := &testInstanceB{}
 	return inst, spec.Reflect(inst)

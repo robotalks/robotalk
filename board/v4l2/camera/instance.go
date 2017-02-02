@@ -126,7 +126,9 @@ func (s *Instance) streaming(cam *webcam.Webcam) {
 }
 
 // Type is the instance type
-var Type = eng.DefineInstanceTypeAndRegister("v4l2.camera",
+var Type = eng.DefineInstanceType("v4l2.camera",
 	eng.InstanceFactoryFunc(func(spec *eng.ComponentSpec) (eng.Instance, error) {
 		return NewInstance(spec)
-	}))
+	})).
+	Describe("V4L2 Camera").
+	Register()

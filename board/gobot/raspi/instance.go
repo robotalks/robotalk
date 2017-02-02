@@ -28,7 +28,9 @@ func (s *Instance) Adaptor() gobot.Adaptor {
 }
 
 // Type is the instance type
-var Type = eng.DefineInstanceTypeAndRegister("gobot.adapter.raspi",
+var Type = eng.DefineInstanceType("gobot.adapter.raspi",
 	eng.InstanceFactoryFunc(func(spec *eng.ComponentSpec) (eng.Instance, error) {
 		return NewInstance(spec)
-	}))
+	})).
+	Describe("[GoBot] Raspberry Pi Adapter").
+	Register()

@@ -99,7 +99,9 @@ func (s *Instance) setPulse(pulse int) {
 }
 
 // Type is the instance type
-var Type = eng.DefineInstanceTypeAndRegister("gobot.i2c.servo.adafruit",
+var Type = eng.DefineInstanceType("gobot.i2c.servo.adafruit",
 	eng.InstanceFactoryFunc(func(spec *eng.ComponentSpec) (eng.Instance, error) {
 		return NewInstance(spec)
-	}))
+	})).
+	Describe("[GoBot] Adafruit Servo HAT (I2C)").
+	Register()

@@ -84,7 +84,9 @@ func (s *Instance) SetSpeed(speed float32) {
 }
 
 // Type is the instance type
-var Type = eng.DefineInstanceTypeAndRegister("gobot.gpio.motor",
+var Type = eng.DefineInstanceType("gobot.gpio.motor",
 	eng.InstanceFactoryFunc(func(spec *eng.ComponentSpec) (eng.Instance, error) {
 		return NewInstance(spec)
-	}))
+	})).
+	Describe("[GoBot] GPIO Motor").
+	Register()

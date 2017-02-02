@@ -1,4 +1,4 @@
-package cmd
+package shell
 
 import (
 	"os"
@@ -11,7 +11,7 @@ import (
 // Instance is the implementation
 type Instance struct {
 	Command string   `json:"command"`
-	Args    []string `json:"args"`
+	Shell   []string `json:"shell"`
 	WorkDir string   `json:"workdir"`
 
 	cmd *exec.Cmd
@@ -23,6 +23,9 @@ func NewInstance(spec *eng.ComponentSpec) (*Instance, error) {
 	if err := spec.Reflect(s); err != nil {
 		return nil, err
 	}
+	if len(s.Shell) == 0 {
+		s.Shell = []string{"/bin/sh", "-c"}
+	}
 	return s, nil
 }
 
@@ -33,7 +36,7 @@ func (s *Instance) Type() eng.InstanceType {
 
 // Start implements LifecycleCtl
 func (s *Instance) Start() error {
-	cmd := exec.Command(s.Command, s.Args...)
+	cmd := exec.Command(s.Shell[0], append(s.Shell[1:], s.Command)...)
 	cmd.Dir = s.WorkDir
 	cmd.Env = os.Environ()
 	cmd.Stdin = os.Stdin
@@ -52,9 +55,9 @@ func (s *Instance) Stop() error {
 }
 
 // Type is the instance type
-var Type = eng.DefineInstanceType("cmd",
+var Type = eng.DefineInstanceType("shell",
 	eng.InstanceFactoryFunc(func(spec *eng.ComponentSpec) (eng.Instance, error) {
 		return NewInstance(spec)
 	})).
-	Describe("[BuiltIn] Execute External Program").
+	Describe("[BuiltIn] Execute Shell Command").
 	Register()

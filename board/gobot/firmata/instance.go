@@ -68,7 +68,9 @@ func firmataConnect(adaptor *plat.FirmataAdaptor) error {
 }
 
 // Type is the instance type
-var Type = eng.DefineInstanceTypeAndRegister("gobot.adapter.firmata",
+var Type = eng.DefineInstanceType("gobot.adapter.firmata",
 	eng.InstanceFactoryFunc(func(spec *eng.ComponentSpec) (eng.Instance, error) {
 		return NewInstance(spec)
-	}))
+	})).
+	Describe("[GoBot] Firmata Adapter").
+	Register()

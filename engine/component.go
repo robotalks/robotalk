@@ -37,6 +37,9 @@ type InstanceType interface {
 	InstanceFactory
 	// Name returns instance type name
 	Name() string
+	// Description returns detailed description of the type
+	// CONVENTION: the first line is the summary
+	Description() string
 }
 
 // InstanceTypeResolver resolves instance type by name
@@ -65,6 +68,7 @@ func RegisterInstanceTypes(types ...InstanceType) {
 // CustomInstanceType is used as template to create instance types
 type CustomInstanceType struct {
 	TypeName string
+	TypeDesc string
 	Factory  InstanceFactory
 }
 
@@ -73,19 +77,29 @@ func (t *CustomInstanceType) Name() string {
 	return t.TypeName
 }
 
+// Description implements InstanceType
+func (t *CustomInstanceType) Description() string {
+	return t.TypeDesc
+}
+
 // CreateInstance implements InstanceType
 func (t *CustomInstanceType) CreateInstance(spec *ComponentSpec) (Instance, error) {
 	return t.Factory.CreateInstance(spec)
 }
 
-// DefineInstanceType defines a custom instance type
-func DefineInstanceType(name string, factory InstanceFactory) InstanceType {
-	return &CustomInstanceType{TypeName: name, Factory: factory}
+// Describe provides type description
+func (t *CustomInstanceType) Describe(desc string) *CustomInstanceType {
+	t.TypeDesc = desc
+	return t
 }
 
-// DefineInstanceTypeAndRegister defines a custom instance type and registers it
-func DefineInstanceTypeAndRegister(name string, factory InstanceFactory) InstanceType {
-	t := DefineInstanceType(name, factory)
+// Register wraps RegisterInstanceType
+func (t *CustomInstanceType) Register() *CustomInstanceType {
 	RegisterInstanceTypes(t)
 	return t
+}
+
+// DefineInstanceType defines a custom instance type
+func DefineInstanceType(name string, factory InstanceFactory) *CustomInstanceType {
+	return &CustomInstanceType{TypeName: name, Factory: factory}
 }
