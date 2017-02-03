@@ -11,6 +11,7 @@ type FourCC uint32
 // FourCC formats
 const (
 	FourCCMJPG FourCC = 0x47504a4d
+	FourCCYUYV FourCC = 0x56595559
 )
 
 // ParseFourCC parses FourCC from a string

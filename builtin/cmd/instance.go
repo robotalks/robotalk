@@ -4,7 +4,7 @@ import (
 	"os"
 	"os/exec"
 
-	cmn "github.com/robotalks/robotalk/builtin/common"
+	cmn "github.com/robotalks/robotalk/common"
 	eng "github.com/robotalks/robotalk/engine"
 )
 
