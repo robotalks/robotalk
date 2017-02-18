@@ -3,10 +3,10 @@ package adafruit
 import (
 	"fmt"
 
-	"github.com/hybridgroup/gobot/platforms/i2c"
 	"github.com/robotalks/mqhub.go/mqhub"
 	cmn "github.com/robotalks/robotalk/board/gobot/common"
 	eng "github.com/robotalks/robotalk/engine"
+	"gobot.io/x/gobot/drivers/i2c"
 )
 
 // Config defines servo configuration
@@ -46,11 +46,11 @@ func NewInstance(spec *eng.ComponentSpec) (*Instance, error) {
 		return nil, err
 	}
 
-	bus, ok := s.Adapter.Adaptor().(i2c.I2c)
+	bus, ok := s.Adapter.Adaptor().(i2c.Connector)
 	if !ok {
 		return nil, fmt.Errorf("injection adapter of %s is not i2c", spec.FullID())
 	}
-	s.device = i2c.NewAdafruitMotorHatDriver(bus, spec.FullID())
+	s.device = i2c.NewAdafruitMotorHatDriver(bus)
 	return s, nil
 }
 
@@ -65,20 +65,20 @@ func (s *Instance) Endpoints() []mqhub.Endpoint {
 }
 
 // Start implements LifecycleCtl
-func (s *Instance) Start() error {
-	err := cmn.Errs(s.device.Start())
+func (s *Instance) Start() (err error) {
+	err = s.device.Start()
 	if err == nil {
 		err = s.device.SetServoMotorFreq(float64(s.Freq))
 	}
 	if err == nil {
 		s.SetPosition(s.InitialPos)
 	}
-	return err
+	return
 }
 
 // Stop implements LifecycleCtl
 func (s *Instance) Stop() error {
-	return cmn.Errs(s.device.Halt())
+	return s.device.Halt()
 }
 
 // SetPosition sets absolute position from -1.0 ~ 1.0

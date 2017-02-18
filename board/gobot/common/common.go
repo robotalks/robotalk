@@ -2,7 +2,7 @@ package common
 
 import (
 	"github.com/easeway/langx.go/errors"
-	"github.com/hybridgroup/gobot"
+	"gobot.io/x/gobot"
 )
 
 // Errs converts error slice into aggregated error

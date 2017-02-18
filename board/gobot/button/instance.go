@@ -3,11 +3,11 @@ package button
 import (
 	"fmt"
 
-	"github.com/hybridgroup/gobot"
-	"github.com/hybridgroup/gobot/platforms/gpio"
 	"github.com/robotalks/mqhub.go/mqhub"
 	cmn "github.com/robotalks/robotalk/board/gobot/common"
 	eng "github.com/robotalks/robotalk/engine"
+	"gobot.io/x/gobot"
+	"gobot.io/x/gobot/drivers/gpio"
 )
 
 // Config defines button configuration
@@ -36,7 +36,7 @@ func NewInstance(spec *eng.ComponentSpec) (*Instance, error) {
 	if !ok {
 		return nil, fmt.Errorf("injection adapter of %s is not gobot.DigitalReader", spec.FullID())
 	}
-	s.device = gpio.NewButtonDriver(digitalReader, spec.FullID(), s.Pin)
+	s.device = gpio.NewButtonDriver(digitalReader, s.Pin)
 	return s, nil
 }
 
@@ -52,7 +52,7 @@ func (s *Instance) Endpoints() []mqhub.Endpoint {
 
 // Start implements LifecycleCtl
 func (s *Instance) Start() (err error) {
-	if err = cmn.Errs(s.device.Start()); err != nil {
+	if err = s.device.Start(); err != nil {
 		return
 	}
 	s.eventCh = s.device.Subscribe()
@@ -63,7 +63,7 @@ func (s *Instance) Start() (err error) {
 // Stop implements LifecycleCtl
 func (s *Instance) Stop() error {
 	close(s.eventCh)
-	return cmn.Errs(s.device.Halt())
+	return s.device.Halt()
 }
 
 func (s *Instance) run(eventCh chan *gobot.Event) {

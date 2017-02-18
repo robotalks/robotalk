@@ -3,10 +3,10 @@ package led
 import (
 	"fmt"
 
-	"github.com/hybridgroup/gobot/platforms/gpio"
 	"github.com/robotalks/mqhub.go/mqhub"
 	cmn "github.com/robotalks/robotalk/board/gobot/common"
 	eng "github.com/robotalks/robotalk/engine"
+	"gobot.io/x/gobot/drivers/gpio"
 )
 
 // Config defines led configuration
@@ -35,8 +35,8 @@ func NewInstance(spec *eng.ComponentSpec) (*Instance, error) {
 	if !ok {
 		return nil, fmt.Errorf("injection adapter of %s is not gobot.DigitalWriter", spec.FullID())
 	}
-	s.device = gpio.NewLedDriver(digitalWriter, spec.FullID(), s.Pin)
-	if err := cmn.Errs(s.device.Start()); err != nil {
+	s.device = gpio.NewLedDriver(digitalWriter, s.Pin)
+	if err := s.device.Start(); err != nil {
 		return nil, err
 	}
 	return s, nil

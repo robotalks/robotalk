@@ -1,19 +1,19 @@
 package raspi
 
 import (
-	"github.com/hybridgroup/gobot"
-	plat "github.com/hybridgroup/gobot/platforms/raspi"
 	eng "github.com/robotalks/robotalk/engine"
+	"gobot.io/x/gobot"
+	plat "gobot.io/x/gobot/platforms/raspi"
 )
 
 // Instance is the implement of Raspberry Pi instance
 type Instance struct {
-	adaptor *plat.RaspiAdaptor
+	adaptor *plat.Adaptor
 }
 
 // NewInstance creates a new instance
 func NewInstance(spec *eng.ComponentSpec) (*Instance, error) {
-	s := &Instance{adaptor: plat.NewRaspiAdaptor(spec.FullID())}
+	s := &Instance{adaptor: plat.NewAdaptor()}
 	return s, nil
 }
 

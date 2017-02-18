@@ -3,10 +3,9 @@ package firmata
 import (
 	"time"
 
-	"github.com/hybridgroup/gobot"
-	plat "github.com/hybridgroup/gobot/platforms/firmata"
-	cmn "github.com/robotalks/robotalk/board/gobot/common"
 	eng "github.com/robotalks/robotalk/engine"
+	"gobot.io/x/gobot"
+	plat "gobot.io/x/gobot/platforms/firmata"
 )
 
 // Config defines firmata configuration
@@ -17,7 +16,7 @@ type Config struct {
 // Instance is the implement of firmata instance
 type Instance struct {
 	Config
-	adaptor *plat.FirmataAdaptor
+	adaptor *plat.Adaptor
 }
 
 // NewInstance creates a new instance
@@ -26,7 +25,7 @@ func NewInstance(spec *eng.ComponentSpec) (*Instance, error) {
 	if err := spec.Reflect(s); err != nil {
 		return nil, err
 	}
-	s.adaptor = plat.NewFirmataAdaptor(spec.FullID(), s.SerialPort)
+	s.adaptor = plat.NewAdaptor(s.SerialPort)
 	return s, nil
 }
 
@@ -42,7 +41,7 @@ func (s *Instance) Start() error {
 
 // Stop implements LifecycleCtl
 func (s *Instance) Stop() error {
-	return cmn.Errs(s.adaptor.Finalize())
+	return s.adaptor.Finalize()
 }
 
 // Adaptor implements cmn.Adapter
@@ -52,10 +51,10 @@ func (s *Instance) Adaptor() gobot.Adaptor {
 
 // HACK: the first time firmata connect after cold boot never gets back
 
-func firmataConnect(adaptor *plat.FirmataAdaptor) error {
+func firmataConnect(adaptor *plat.Adaptor) error {
 	connCh := make(chan error)
 	go func() {
-		connCh <- cmn.Errs(adaptor.Connect())
+		connCh <- adaptor.Connect()
 	}()
 	select {
 	case e := <-connCh:
@@ -64,7 +63,7 @@ func firmataConnect(adaptor *plat.FirmataAdaptor) error {
 		adaptor.Disconnect()
 	}
 	// now reconnect
-	return cmn.Errs(adaptor.Connect())
+	return adaptor.Connect()
 }
 
 // Type is the instance type
