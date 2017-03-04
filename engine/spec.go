@@ -4,43 +4,54 @@ import (
 	"fmt"
 	"log"
 	"path"
-	"reflect"
 	"strings"
 
 	"github.com/easeway/langx.go/errors"
 	"github.com/robotalks/mqhub.go/mqhub"
+	talk "github.com/robotalks/talk.contract/v0"
 )
 
 // Spec is the top-level document
 type Spec struct {
-	Name        string                    `json:"name"`
-	Version     string                    `json:"version"`
-	Description string                    `json:"description"`
-	Author      string                    `json:"author"`
-	Children    map[string]*ComponentSpec `json:"components"`
+	Name        string                    `map:"name"`
+	Version     string                    `map:"version"`
+	Description string                    `map:"description"`
+	Author      string                    `map:"author"`
+	ChildSpecs  map[string]*ComponentSpec `map:"components"`
 
-	TypeResolver InstanceTypeResolver `json:"-"`
-	Logger       *log.Logger          `json:"-"`
+	TypeResolver talk.ComponentTypeResolver `map:"-"`
+	Logger       *log.Logger                `map:"-"`
 
 	initOrder   [][]*ComponentSpec
 	publication mqhub.Publication
 }
 
+// Injection Types
+const (
+	InjectRef = "ref"
+	InjectHub = "hub"
+)
+
+// InjectionSpec defines an injection
+type InjectionSpec struct {
+	Type string `map:"type"`
+	ID   string `map:"id"`   // when type is ref
+	Path string `map:"path"` // when type is hub
+}
+
 // ComponentSpec defines a specific component
 type ComponentSpec struct {
-	TypeName    string                    `json:"type"`
-	Injections  map[string]string         `json:"inject"`
-	Connections map[string]string         `json:"connect"`
-	Children    map[string]*ComponentSpec `json:"components"`
-	Config      map[string]interface{}    `json:"config"`
+	TypeName    string                    `map:"type"`
+	InjectSpecs map[string]*InjectionSpec `map:"inject"`
+	ChildSpecs  map[string]*ComponentSpec `map:"components"`
+	Config      map[string]interface{}    `map:"config"`
 
-	LocalID            string                       `json:"-"`
-	Root               *Spec                        `json:"-"`
-	Parent             *ComponentSpec               `json:"-"`
-	InstanceType       InstanceType                 `json:"-"`
-	Instance           Instance                     `json:"-"`
-	ResolvedInjections map[string]*ComponentSpec    `json:"-"`
-	ConnectionRefs     map[string]mqhub.EndpointRef `json:"-"`
+	LocalID            string                 `map:"-"`
+	Root               *Spec                  `map:"-"`
+	ParentSpec         *ComponentSpec         `map:"-"`
+	ResolvedType       talk.ComponentType     `map:"-"`
+	Instance           talk.Component         `map:"-"`
+	ResolvedInjections map[string]interface{} `map:"-"`
 
 	depends   map[string]*ComponentSpec
 	activates map[string]*ComponentSpec
@@ -52,9 +63,9 @@ type ComponentSpec struct {
 func ParseSpec(input Config) (*Spec, error) {
 	var spec Spec
 	err := input.As(&spec)
-	if err == nil && spec.Children != nil {
-		for id, comp := range spec.Children {
-			comp.init(&spec, id, nil)
+	if err == nil && spec.ChildSpecs != nil {
+		for id, s := range spec.ChildSpecs {
+			s.init(&spec, id, nil)
 		}
 	}
 	return &spec, err
@@ -72,8 +83,8 @@ func (s *Spec) Endpoints() []mqhub.Endpoint {
 
 // Components implements mqhub.Composite
 func (s *Spec) Components() (comps []mqhub.Component) {
-	for _, comp := range s.Children {
-		comps = append(comps, comp)
+	for _, spec := range s.ChildSpecs {
+		comps = append(comps, spec)
 	}
 	return
 }
@@ -81,12 +92,12 @@ func (s *Spec) Components() (comps []mqhub.Component) {
 // Resolve constructs the component instances
 func (s *Spec) Resolve() error {
 	all := make(map[string]*ComponentSpec)
-	for _, comp := range s.Children {
-		comp.resolveStart(all)
+	for _, spec := range s.ChildSpecs {
+		spec.resolveStart(all)
 	}
 	errs := &errors.AggregatedError{}
-	for _, comp := range s.Children {
-		comp.buildDependencies(errs)
+	for _, spec := range s.ChildSpecs {
+		spec.buildDependencies(errs)
 	}
 	if err := errs.Aggregate(); err != nil {
 		return err
@@ -94,10 +105,10 @@ func (s *Spec) Resolve() error {
 
 	resolver := s.TypeResolver
 	if resolver == nil {
-		resolver = InstanceTypes
+		resolver = talk.DefaultComponentTypeRegistry
 	}
-	for _, comp := range s.Children {
-		comp.resolveType(resolver, errs)
+	for _, spec := range s.ChildSpecs {
+		spec.resolveType(resolver, errs)
 	}
 	if err := errs.Aggregate(); err != nil {
 		return err
@@ -126,8 +137,8 @@ func (s *Spec) Resolve() error {
 // Connect constructs all the component and establish endpoint connections
 func (s *Spec) Connect(connector mqhub.Connector) error {
 	errs := &errors.AggregatedError{}
-	for _, comp := range s.Children {
-		comp.resolveConnections(connector, errs)
+	for _, spec := range s.ChildSpecs {
+		spec.resolveConnections(connector, errs)
 	}
 	if err := errs.Aggregate(); err != nil {
 		return err
@@ -187,7 +198,7 @@ func (s *ComponentSpec) ID() string {
 // Endpoints implements mqhub.Component
 func (s *ComponentSpec) Endpoints() []mqhub.Endpoint {
 	if s.Instance != nil {
-		if stateful, ok := s.Instance.(Stateful); ok {
+		if stateful, ok := s.Instance.(talk.Stateful); ok {
 			return stateful.Endpoints()
 		}
 	}
@@ -196,15 +207,54 @@ func (s *ComponentSpec) Endpoints() []mqhub.Endpoint {
 
 // Components implements mqhub.Composite
 func (s *ComponentSpec) Components() (comps []mqhub.Component) {
-	for _, comp := range s.Children {
-		comps = append(comps, comp)
+	for _, spec := range s.ChildSpecs {
+		comps = append(comps, spec)
 	}
 	return
 }
 
+// ComponentID implements talk.ComponentRef
+func (s *ComponentSpec) ComponentID() string {
+	return s.ID()
+}
+
+// MessagePath implements talk.ComponentRef
+func (s *ComponentSpec) MessagePath() string {
+	return s.FullID()
+}
+
+// ComponentConfig implements talk.ComponentRef
+func (s *ComponentSpec) ComponentConfig() map[string]interface{} {
+	return s.Config
+}
+
+// Injections implements talk.ComponentRef
+func (s *ComponentSpec) Injections() map[string]interface{} {
+	return s.ResolvedInjections
+}
+
+// Component implements talk.ComponentRef
+func (s *ComponentSpec) Component() talk.Component {
+	return s.Instance
+}
+
+// Parent implements talk.ComponentRef
+func (s *ComponentSpec) Parent() talk.ComponentRef {
+	return s.ParentSpec
+}
+
+// Children implements talk.ComponentRef
+func (s *ComponentSpec) Children() []talk.ComponentRef {
+	children := make([]talk.ComponentRef, 0, len(s.ChildSpecs))
+	for _, spec := range s.ChildSpecs {
+		children = append(children, spec)
+	}
+	return children
+}
+
 // FullID returns the absolute ID reflecting the hierarchy
 func (s *ComponentSpec) FullID() (id string) {
-	for spec := s; spec != nil; spec = spec.Parent {
+	for spec := s; spec != nil; spec = spec.ParentSpec {
 		if id != "" {
 			id = spec.LocalID + "/" + id
 		} else {
@@ -212,67 +262,6 @@ func (s *ComponentSpec) FullID() (id string) {
 		}
 	}
 	return
-}
-
-// ConfigAs maps config into provided type
-func (s *ComponentSpec) ConfigAs(out interface{}) error {
-	conf := &MapConfig{Map: s.Config}
-	return conf.As(out)
-}
-
-// Reflect maps config, injections, connections to dest struct
-func (s *ComponentSpec) Reflect(dest interface{}) error {
-	v := reflect.Indirect(reflect.ValueOf(dest))
-	if v.Kind() != reflect.Struct {
-		panic("not a struct")
-	}
-	errs := errors.AggregatedError{}
-	errs.Add(s.ConfigAs(dest))
-	t := v.Type()
-	for i := 0; i < t.NumField(); i++ {
-		f := t.Field(i)
-		if f.PkgPath != "" || f.Anonymous { // unexported or anonymous field
-			continue
-		}
-		if f.Type.Kind() != reflect.Interface {
-			continue
-		}
-
-		key := f.Tag.Get("key")
-		if key == "" {
-			continue
-		}
-
-		// map connections
-		if f.Type == reflect.TypeOf((*mqhub.EndpointRef)(nil)).Elem() {
-			if ref, ok := s.ConnectionRefs[key]; ok {
-				v.Field(i).Set(reflect.ValueOf(ref))
-			} else {
-				errs.Add(fmt.Errorf("%s: connection %s unspecified", s.FullID(), key))
-			}
-			continue
-		}
-
-		// otherwise, treat as injection
-		comp := s.ResolvedInjections[key]
-		if comp == nil || comp.Instance == nil {
-			errs.Add(fmt.Errorf("%s: injection %s unspecified", s.FullID(), key))
-			continue
-		}
-		instType := reflect.TypeOf(comp.Instance)
-		fv := v.Field(i)
-		if !fv.CanSet() {
-			panic("field " + f.Name + " must be settable")
-		}
-		if instType.AssignableTo(f.Type) {
-			v.Field(i).Set(reflect.ValueOf(comp.Instance))
-		} else if instType.ConvertibleTo(f.Type) {
-			v.Field(i).Set(reflect.ValueOf(comp.Instance).Convert(f.Type))
-		} else {
-			errs.Add(fmt.Errorf("%s injection %s type mismatch", s.FullID(), key))
-		}
-	}
-	return errs.Aggregate()
 }
 
 // Logf wraps s.Root.Logf
@@ -288,21 +277,18 @@ func (s *ComponentSpec) Logfln(format string, v ...interface{}) {
 func (s *ComponentSpec) init(root *Spec, id string, parent *ComponentSpec) {
 	s.LocalID = id
 	s.Root = root
-	s.Parent = parent
-	if s.Injections == nil {
-		s.Injections = make(map[string]string)
-	}
-	if s.Connections == nil {
-		s.Connections = make(map[string]string)
+	s.ParentSpec = parent
+	if s.InjectSpecs == nil {
+		s.InjectSpecs = make(map[string]*InjectionSpec)
 	}
 	if s.Config == nil {
 		s.Config = make(map[string]interface{})
 	}
-	if s.Children == nil {
-		s.Children = make(map[string]*ComponentSpec)
+	if s.ChildSpecs == nil {
+		s.ChildSpecs = make(map[string]*ComponentSpec)
 	}
-	for id, comp := range s.Children {
-		comp.init(root, id, s)
+	for id, spec := range s.ChildSpecs {
+		spec.init(root, id, s)
 	}
 }
 
@@ -310,42 +296,48 @@ func (s *ComponentSpec) resolveStart(all map[string]*ComponentSpec) {
 	all[s.FullID()] = s
 	s.depends = make(map[string]*ComponentSpec)
 	s.activates = make(map[string]*ComponentSpec)
-	for _, comp := range s.Children {
-		comp.resolveStart(all)
+	for _, spec := range s.ChildSpecs {
+		spec.resolveStart(all)
 	}
 }
 
 func (s *ComponentSpec) buildDependencies(errs *errors.AggregatedError) {
-	s.ResolvedInjections = make(map[string]*ComponentSpec)
-	for name, injectID := range s.Injections {
-		spec := s.resolveIDRef(injectID)
+	s.ResolvedInjections = make(map[string]interface{})
+	for name, injectSpec := range s.InjectSpecs {
+		if injectSpec.Type != InjectRef {
+			continue
+		}
+		if injectSpec.ID == "" {
+			errs.Add(fmt.Errorf("%s: injection 'id' required %s", s.FullID(), name))
+		}
+		spec := s.resolveIDRef(injectSpec.ID)
 		if spec == nil {
-			errs.Add(fmt.Errorf("%s: unresolved inject %s", s.FullID(), injectID))
+			errs.Add(fmt.Errorf("%s: unresolved inject %s", s.FullID(), injectSpec.ID))
 			continue
 		}
 		s.depends[spec.FullID()] = spec
 		spec.activates[s.FullID()] = s
 		s.ResolvedInjections[name] = spec
 	}
-	for _, comp := range s.Children {
+	for _, spec := range s.ChildSpecs {
 		// parent take dependency on child
-		s.depends[comp.FullID()] = comp
-		comp.activates[s.FullID()] = s
-		comp.buildDependencies(errs)
+		s.depends[spec.FullID()] = spec
+		spec.activates[s.FullID()] = s
+		spec.buildDependencies(errs)
 	}
 }
 
 func (s *ComponentSpec) resolveIDRef(idRef string) *ComponentSpec {
 	var components map[string]*ComponentSpec
-	spec := s.Parent
+	spec := s.ParentSpec
 	if spec != nil {
-		components = spec.Children
+		components = spec.ChildSpecs
 	} else {
-		components = s.Root.Children
+		components = s.Root.ChildSpecs
 	}
 	if strings.HasPrefix(idRef, "/") {
 		spec = nil
-		components = s.Root.Children
+		components = s.Root.ChildSpecs
 		idRef = idRef[1:]
 	}
 	for idRef != "" {
@@ -362,8 +354,8 @@ func (s *ComponentSpec) resolveIDRef(idRef string) *ComponentSpec {
 			if spec == nil {
 				return nil
 			}
-			if spec = spec.Parent; spec == nil {
-				components = s.Root.Children
+			if spec = spec.ParentSpec; spec == nil {
+				components = s.Root.ChildSpecs
 				continue
 			}
 		} else {
@@ -372,7 +364,7 @@ func (s *ComponentSpec) resolveIDRef(idRef string) *ComponentSpec {
 		if spec == nil {
 			break
 		}
-		components = spec.Children
+		components = spec.ChildSpecs
 	}
 	return spec
 }
@@ -386,48 +378,54 @@ func (s *ComponentSpec) activate(all map[string]*ComponentSpec) (ready []*Compon
 			ready = append(ready, spec.activate(all)...)
 		}
 	}
-	for _, comp := range s.Children {
-		ready = append(ready, comp.activate(all)...)
+	for _, spec := range s.ChildSpecs {
+		ready = append(ready, spec.activate(all)...)
 	}
 	return
 }
 
-func (s *ComponentSpec) resolveType(resolver InstanceTypeResolver, errs *errors.AggregatedError) {
+func (s *ComponentSpec) resolveType(resolver talk.ComponentTypeResolver, errs *errors.AggregatedError) {
 	if s.TypeName == "" {
-		s.InstanceType = nil
+		s.ResolvedType = nil
 	} else {
-		typ, err := resolver.ResolveInstanceType(s.TypeName)
+		typ, err := resolver.ResolveComponentType(s.TypeName)
 		errs.Add(err)
 		if err == nil && typ == nil {
 			errs.Add(fmt.Errorf("%s type unresolved: %s", s.FullID(), s.TypeName))
 		}
-		s.InstanceType = typ
+		s.ResolvedType = typ
 	}
-	for _, comp := range s.Children {
-		comp.resolveType(resolver, errs)
+	for _, spec := range s.ChildSpecs {
+		spec.resolveType(resolver, errs)
 	}
 }
 
 func (s *ComponentSpec) resolveConnections(connector mqhub.Connector, errs *errors.AggregatedError) {
-	s.ConnectionRefs = make(map[string]mqhub.EndpointRef)
-	for name, ref := range s.Connections {
-		compRef, endpoint := path.Split(ref)
-		s.ConnectionRefs[name] = connector.Describe(compRef).Endpoint(endpoint)
+	for name, inject := range s.InjectSpecs {
+		if inject.Type != InjectHub || inject.Path == "" {
+			continue
+		}
+		compRef, endpoint := path.Split(inject.Path)
+		s.ResolvedInjections[name] = connector.Describe(compRef).Endpoint(endpoint)
 	}
-	for _, comp := range s.Children {
-		comp.resolveConnections(connector, errs)
+	for _, spec := range s.ChildSpecs {
+		spec.resolveConnections(connector, errs)
 	}
 }
 
 func (s *ComponentSpec) connect(errs *errors.AggregatedError) {
-	if s.InstanceType == nil {
+	if s.ResolvedType == nil {
+		return
+	}
+	factory := s.ResolvedType.Factory()
+	if factory == nil {
 		return
 	}
 	s.Logfln("%s Initialize", s.FullID())
-	instance, err := s.InstanceType.CreateInstance(s)
+	instance, err := factory.CreateComponent(s)
 	if !errs.Add(err) {
 		s.Instance = instance
-		if ctl, ok := instance.(LifecycleCtl); ok {
+		if ctl, ok := instance.(talk.LifecycleCtl); ok {
 			s.Logfln("%s Start", s.FullID())
 			s.started = !errs.Add(ctl.Start())
 		}
@@ -439,7 +437,7 @@ func (s *ComponentSpec) disconnect() error {
 	s.Instance = nil
 	if inst != nil && s.started {
 		s.started = false
-		if ctl, ok := inst.(LifecycleCtl); ok {
+		if ctl, ok := inst.(talk.LifecycleCtl); ok {
 			s.Logfln("%s Stop", s.FullID())
 			return ctl.Stop()
 		}

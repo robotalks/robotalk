@@ -6,12 +6,13 @@ import (
 	"testing"
 
 	"github.com/robotalks/mqhub.go/mqhub"
+	talk "github.com/robotalks/talk.contract/v0"
 	"github.com/stretchr/testify/assert"
 )
 
-type TestTypes map[string]InstanceType
+type TestTypes map[string]talk.ComponentType
 
-func (f TestTypes) ResolveInstanceType(name string) (InstanceType, error) {
+func (f TestTypes) ResolveComponentType(name string) (talk.ComponentType, error) {
 	return f[name], nil
 }
 

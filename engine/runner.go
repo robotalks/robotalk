@@ -68,7 +68,7 @@ func (r *Runner) Run() error {
 }
 
 // LogPrefix is default log prefix
-var LogPrefix = "RoboTalk:> "
+var LogPrefix = "Talk:> "
 
 // Run is the simple wrapper to run the engine
 func Run(hubURL, specFile string) error {

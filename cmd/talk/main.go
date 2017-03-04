@@ -7,6 +7,11 @@ import (
 	"github.com/codingbrain/clix.go/exts/help"
 	"github.com/codingbrain/clix.go/flag"
 	"github.com/codingbrain/clix.go/term"
+
+	"github.com/robotalks/talk/cli"
+
+	_ "github.com/robotalks/mqhub.go/mqtt"
+	_ "github.com/robotalks/talk/builtin"
 )
 
 // Version number
@@ -29,9 +34,9 @@ func (c *versionCommand) Execute(_ []string) error {
 }
 
 func main() {
-	cli := &flag.CliDef{
+	cmd := &flag.CliDef{
 		Cli: &flag.Command{
-			Name: "robotalk",
+			Name: "talk",
 			Desc: "Connect Robotic Components",
 			Options: []*flag.Option{
 				&flag.Option{
@@ -39,6 +44,18 @@ func main() {
 					Alias:   []string{"s"},
 					Desc:    "mqhub URL",
 					Default: "mqtt://127.0.0.1:1883",
+				},
+				&flag.Option{
+					Name:  "modules-dir",
+					Alias: []string{"L"},
+					Desc:  "path to look for modules",
+					List:  true,
+				},
+				&flag.Option{
+					Name:    "load-modules",
+					Desc:    "load modules",
+					Type:    "bool",
+					Default: true,
 				},
 				&flag.Option{
 					Name:  "quiet",
@@ -72,11 +89,11 @@ func main() {
 			},
 		},
 	}
-	cli.Normalize()
-	cli.Use(term.NewExt()).
+	cmd.Normalize()
+	cmd.Use(term.NewExt()).
 		Use(bind.NewExt().
-			Bind(&RunCommand{}, "run").
-			Bind(&TypesCommand{}, "types").
+			Bind(&cli.RunCommand{}, "run").
+			Bind(&cli.TypesCommand{}, "types").
 			Bind(&versionCommand{}, "version")).
 		Use(help.NewExt()).
 		Parse().

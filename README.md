@@ -1,8 +1,8 @@
-# RoboTalk
+# Talk
 
 Connect Robotic Components!
 
-RoboTalk turns Robotics logics into LEGO blocks.
+Talk turns Robotics logics into LEGO blocks.
 The logics include:
 
 - Hardware drivers
