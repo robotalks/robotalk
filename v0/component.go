@@ -2,14 +2,9 @@ package talk
 
 import "github.com/robotalks/mqhub.go/mqhub"
 
-// Identity represents an object with ID
-type Identity interface {
-	ID() string
-}
-
 // Component is the abstract representative of an object in the topology
 type Component interface {
-	Identity
+	Ref() ComponentRef
 	Type() ComponentType
 }
 
