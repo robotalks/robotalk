@@ -1,5 +1,7 @@
 package talk
 
+import "github.com/robotalks/mqhub.go/mqhub"
+
 // Identity represents an object with ID
 type Identity interface {
 	ID() string
@@ -13,7 +15,7 @@ type Component interface {
 
 // Stateful defines instances which publishes endpoints
 type Stateful interface {
-	StateNames() []string
+	Endpoints() []mqhub.Endpoint
 }
 
 // LifecycleCtl provides start/stop control
@@ -28,8 +30,8 @@ type ComponentRef interface {
 	ComponentID() string
 	// MessagePath is the path for dispatching message to this component
 	MessagePath() string
-	// Config retrieves configuration for the component
-	Config() map[string]interface{}
+	// ComponentConfig retrieves configuration for the component
+	ComponentConfig() map[string]interface{}
 	// Injections retrieves resolved injections
 	Injections() map[string]interface{}
 	// Component retrieves created component
