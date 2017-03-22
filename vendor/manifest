@@ -9,7 +9,7 @@
 			"branch": "master",
 			"notests": true
 		},
-        {
+		{
 			"importpath": "github.com/easeway/langx.go",
 			"repository": "https://github.com/easeway/langx.go",
 			"vcs": "",
@@ -75,14 +75,14 @@
 			"path": "/xpc",
 			"notests": true
 		},
-        {
-            "importpath": "github.com/robotalks/talk",
-            "repository": "https://github.com/robotalks/talk",
-            "vcs": "git",
-            "revision": "0f9a9cab138aba635f49727f5915a1d7a38c6176",
-            "branch": "master",
-            "notests": true
-        },
+		{
+			"importpath": "github.com/robotalks/talk",
+			"repository": "https://github.com/robotalks/talk",
+			"vcs": "git",
+			"revision": "22b10a4c48b52bb6f7b96775e981933123650fc8",
+			"branch": "master",
+			"notests": true
+		},
 		{
 			"importpath": "github.com/sigurn/crc8",
 			"repository": "https://github.com/sigurn/crc8",

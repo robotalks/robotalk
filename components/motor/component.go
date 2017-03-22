@@ -21,7 +21,7 @@ type Config struct {
 // Component is the implement of motor Component
 type Component struct {
 	Config
-	Adapter cmn.Adapter `inject:"gpio" json:"-"`
+	Adapter cmn.Adapter `inject:"gpio" map:"-"`
 
 	ref    talk.ComponentRef
 	device *gpio.MotorDriver
@@ -29,7 +29,7 @@ type Component struct {
 	speed  *mqhub.Reactor
 }
 
-// NewComponent creates an Component
+// NewComponent creates a Component
 func NewComponent(ref talk.ComponentRef) (talk.Component, error) {
 	s := &Component{ref: ref, state: &mqhub.DataPoint{Name: "state", Retain: true}}
 	s.speed = mqhub.ReactorAs("speed", s.SetSpeed)

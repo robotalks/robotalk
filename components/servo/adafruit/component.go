@@ -22,7 +22,7 @@ type Config struct {
 // Component is the implement of Adafruit HAT Component
 type Component struct {
 	Config
-	Adapter cmn.Adapter `inject:"i2c" json:"-"`
+	Adapter cmn.Adapter `inject:"i2c" map:"-"`
 
 	ref    talk.ComponentRef
 	device *i2c.AdafruitMotorHatDriver
@@ -31,7 +31,7 @@ type Component struct {
 	pulse  *mqhub.Reactor
 }
 
-// NewComponent creates an Component
+// NewComponent creates a Component
 func NewComponent(ref talk.ComponentRef) (talk.Component, error) {
 	s := &Component{
 		Config: Config{

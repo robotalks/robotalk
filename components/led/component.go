@@ -18,7 +18,7 @@ type Config struct {
 // Component is the implement of led Component
 type Component struct {
 	Config
-	Adapter cmn.Adapter `inject:"gpio" json:"-"`
+	Adapter cmn.Adapter `inject:"gpio" map:"-"`
 
 	ref    talk.ComponentRef
 	device *gpio.LedDriver
@@ -26,7 +26,7 @@ type Component struct {
 	power  *mqhub.Reactor
 }
 
-// NewComponent creates an Component
+// NewComponent creates a Component
 func NewComponent(ref talk.ComponentRef) (talk.Component, error) {
 	s := &Component{ref: ref, state: &mqhub.DataPoint{Name: "state", Retain: true}}
 	s.power = mqhub.ReactorAs("power", s.SetPower)

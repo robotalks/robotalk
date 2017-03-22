@@ -20,7 +20,7 @@ type Config struct {
 // Component is the implement of button Component
 type Component struct {
 	Config
-	Adapter cmn.Adapter `inject:"gpio" json:"-"`
+	Adapter cmn.Adapter `inject:"gpio" map:"-"`
 
 	ref     talk.ComponentRef
 	device  *gpio.ButtonDriver
@@ -28,7 +28,7 @@ type Component struct {
 	eventCh chan *gobot.Event
 }
 
-// NewComponent creates an Component
+// NewComponent creates a Component
 func NewComponent(ref talk.ComponentRef) (talk.Component, error) {
 	s := &Component{ref: ref, state: &mqhub.DataPoint{Name: "state", Retain: true}}
 	if err := eng.SetupComponent(s, ref); err != nil {
