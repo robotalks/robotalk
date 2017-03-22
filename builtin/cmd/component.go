@@ -19,7 +19,7 @@ type Component struct {
 	cmd *exec.Cmd
 }
 
-// NewComponent creates an Component
+// NewComponent creates a Component
 func NewComponent(ref talk.ComponentRef) (*Component, error) {
 	s := &Component{ref: ref}
 	if err := eng.SetupComponent(s, ref); err != nil {

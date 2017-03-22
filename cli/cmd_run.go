@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/robotalks/talk/engine"
+	"github.com/robotalks/talk/plugin"
 )
 
 // RunCommand implements robotalk run
@@ -19,7 +20,7 @@ type RunCommand struct {
 func (c *RunCommand) Execute(args []string) error {
 	os.Setenv("MQHUB_URL", c.URL)
 	if c.LoadModules {
-		engine.LoadModules(c.ModulesDir)
+		plugin.LoadModules(c.ModulesDir)
 	}
 	return engine.Run(c.URL, c.Spec)
 }

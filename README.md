@@ -11,5 +11,5 @@ The logics include:
 - Monitoring logics
 - Simulation/Visualization logics
 
-These are developed in highly reusable components, and make it possible to
-make new Robotics hardware work without writing code.
+Building robots from a configuration is possible with these highly reusable
+components.

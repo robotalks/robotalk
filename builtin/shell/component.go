@@ -11,15 +11,15 @@ import (
 
 // Component is the implementation
 type Component struct {
-	Command string   `json:"command"`
-	Shell   []string `json:"shell"`
-	WorkDir string   `json:"workdir"`
+	Command string   `map:"command"`
+	Shell   []string `map:"shell"`
+	WorkDir string   `map:"workdir"`
 
 	ref talk.ComponentRef
 	cmd *exec.Cmd
 }
 
-// NewComponent creates an Component
+// NewComponent creates a Component
 func NewComponent(ref talk.ComponentRef) (talk.Component, error) {
 	s := &Component{ref: ref}
 	if err := eng.SetupComponent(s, ref); err != nil {

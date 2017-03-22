@@ -50,5 +50,5 @@ settings:
   exec-target: vendor
   exec-shell: /bin/bash
   docker:
-    image: 'robotalks/talk/toolchain:v0'
+    image: 'robotalks/talk-toolchain:v0'
     src-volume: /go/src/github.com/robotalks/talk

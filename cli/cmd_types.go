@@ -6,17 +6,20 @@ import (
 	"strings"
 
 	talk "github.com/robotalks/talk.contract/v0"
-	"github.com/robotalks/talk/engine"
+	"github.com/robotalks/talk/plugin"
 )
 
 // TypesCommand implements robotalk types
 type TypesCommand struct {
-	ModulesDir []string `n:"modules-dir"`
+	ModulesDir  []string `n:"modules-dir"`
+	LoadModules bool     `n:"load-modules"`
 }
 
 // Execute implements Executable
 func (c *TypesCommand) Execute(args []string) error {
-	engine.LoadModules(c.ModulesDir)
+	if c.LoadModules {
+		plugin.LoadModules(c.ModulesDir)
+	}
 	types := talk.DefaultComponentTypeRegistry.RegisteredComponentTypes()
 	typesMap := make(map[string]talk.ComponentType)
 	names := make([]string, 0, len(types))
