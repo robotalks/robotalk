@@ -7,9 +7,6 @@ description: talk plugin with V4L support
 targets:
   toolchain:
     description: build toolchain with shared contract
-    watches:
-      - hack/toolchain
-    build: hack/toolchain
 
   vendor:
     description: fetch dependencies for Go pkg
@@ -42,7 +39,7 @@ targets:
       - vendor
     always: true
     cmds:
-      - go test ./components/...
+      - go test ./camera/...
 
 settings:
   default-targets:
@@ -50,5 +47,5 @@ settings:
   exec-target: vendor
   exec-shell: /bin/bash
   docker:
-    image: 'robotalks/talk-v4l/toolchain:v0'
+    image: 'robotalks/talk-toolchain:v0'
     src-volume: /go/src/github.com/robotalks/talk-v4l

@@ -42,7 +42,7 @@ type Component struct {
 	cam     *webcam.Webcam
 }
 
-// NewComponent creates an Component
+// NewComponent creates a Component
 func NewComponent(ref talk.ComponentRef) (talk.Component, error) {
 	s := &Component{
 		ref: ref,
