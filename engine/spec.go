@@ -45,6 +45,7 @@ type ComponentSpec struct {
 	InjectSpecs map[string]*InjectionSpec `map:"inject"`
 	ChildSpecs  map[string]*ComponentSpec `map:"components"`
 	Config      map[string]interface{}    `map:"config"`
+	After       []string                  `map:"after"`
 
 	LocalID            string                 `map:"-"`
 	Root               *Spec                  `map:"-"`
@@ -318,6 +319,15 @@ func (s *ComponentSpec) buildDependencies(errs *errors.AggregatedError) {
 		s.depends[spec.FullID()] = spec
 		spec.activates[s.FullID()] = s
 		s.ResolvedInjections[name] = spec
+	}
+	for _, id := range s.After {
+		spec := s.resolveIDRef(id)
+		if spec == nil {
+			errs.Add(fmt.Errorf("%s: unresolved dep after %s", s.FullID(), id))
+			continue
+		}
+		s.depends[spec.FullID()] = spec
+		spec.activates[s.FullID()] = s
 	}
 	for _, spec := range s.ChildSpecs {
 		// parent take dependency on child
