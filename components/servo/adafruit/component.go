@@ -17,6 +17,7 @@ type Config struct {
 	PulseMin   int     `map:"pulse-min"`
 	PulseMax   int     `map:"pulse-max"`
 	InitialPos float32 `map:"initial-pos"`
+	Reverse    bool    `map:"reverse"`
 }
 
 // Component is the implement of Adafruit HAT Component
@@ -93,6 +94,9 @@ func (s *Component) Stop() error {
 func (s *Component) SetPosition(pos float32) {
 	if pos < -1.0 || pos > 1.0 {
 		return
+	}
+	if s.Reverse {
+		pos = -pos
 	}
 	pulse := s.PulseMin + int((pos+1.0)*float32(s.PulseMax-s.PulseMin)/2.0)
 	err := s.device.SetServoMotorPulse(byte(s.Channel), 0, int32(pulse))
