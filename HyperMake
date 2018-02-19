@@ -16,9 +16,10 @@ targets:
     after:
       - toolchain
     watches:
-      - vendor/manifest
+      - Gopkg.lock
+      - Gopkg.toml
     cmds:
-      - gvt restore
+      - dep ensure
 
   build-linux-[arch:amd64,armhf]:
     description: build commands
