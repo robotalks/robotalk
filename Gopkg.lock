@@ -28,41 +28,10 @@
   revision = "26b1f7c6dca048ea18dba3ccef106d20ca29e898"
 
 [[projects]]
-  name = "github.com/eclipse/paho.mqtt.golang"
-  packages = [
-    ".",
-    "packets"
-  ]
-  revision = "aff15770515e3c57fc6109da73d42b0d46f7f483"
-  version = "v1.1.0"
-
-[[projects]]
   name = "github.com/pmezard/go-difflib"
   packages = ["difflib"]
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/robotalks/mqhub.go"
-  packages = [
-    "mqhub",
-    "mqtt",
-    "utils"
-  ]
-  revision = "3c92e551de142e623edc065a2b137cd27f01fea9"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/robotalks/talk.contract"
-  packages = ["v0"]
-  revision = "c5f5f934790f7dcdf7d8a2c3e5b75baaeed5a69f"
-
-[[projects]]
-  name = "github.com/rs/xid"
-  packages = ["."]
-  revision = "02dd45c33376f85d1064355dc790dcc4850596b1"
-  version = "v1.1"
 
 [[projects]]
   name = "github.com/stretchr/testify"
@@ -73,15 +42,6 @@
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   revision = "ede567c8e044a5913dad1d1af3696d9da953104c"
-
-[[projects]]
-  branch = "master"
-  name = "golang.org/x/net"
-  packages = [
-    "proxy",
-    "websocket"
-  ]
-  revision = "cbe0f9307d0156177f9dd5dc85da1a31abc5f2fb"
 
 [[projects]]
   branch = "master"
@@ -98,6 +58,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d9b00e9c117c04afd5900568550c7bd9c331452751e452ae87581081aca52cf2"
+  inputs-digest = "243940db58af8bc96dffeebae32b9eb856455457f22da1dde273ffc75f7403f8"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/codingbrain/clix.go/exts/bind"
 	"github.com/codingbrain/clix.go/exts/help"
@@ -34,6 +35,10 @@ func (c *versionCommand) Execute(_ []string) error {
 }
 
 func main() {
+	mqURL := os.Getenv("MQHUB_URL")
+	if mqURL == "" {
+		mqURL = "mqtt://127.0.0.1:1883"
+	}
 	cmd := &flag.CliDef{
 		Cli: &flag.Command{
 			Name: "talk",
@@ -43,7 +48,7 @@ func main() {
 					Name:    "url",
 					Alias:   []string{"s"},
 					Desc:    "mqhub URL",
-					Default: "mqtt://127.0.0.1:1883",
+					Default: mqURL,
 				},
 				&flag.Option{
 					Name:  "modules-dir",

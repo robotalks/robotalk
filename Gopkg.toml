@@ -24,6 +24,10 @@
 #   go-tests = true
 #   unused-packages = true
 
+ignored = [
+  "github.com/robotalks/mqhub.go/*",
+  "github.com/robotalks/talk.contract/*"
+]
 
 [[constraint]]
   branch = "master"
@@ -32,14 +36,6 @@
 [[constraint]]
   branch = "master"
   name = "github.com/easeway/langx.go"
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/robotalks/mqhub.go"
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/robotalks/talk.contract"
 
 [[constraint]]
   branch = "v2"
