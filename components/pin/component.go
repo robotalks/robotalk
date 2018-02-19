@@ -16,6 +16,8 @@ type Config struct {
 	Pin            string `map:"pin"`
 	InitialDigital *bool  `map:"value"`
 	InitialPWM     *byte  `map:"value"`
+	StopDigital    *bool  `map:"stop-value"`
+	StopPWM        *byte  `map:"stop-value"`
 }
 
 // Component is the implement of led Component
@@ -76,6 +78,12 @@ func (s *Component) Start() error {
 
 // Stop implements talk.LifecycleCtl
 func (s *Component) Stop() error {
+	if d := s.StopDigital; d != nil {
+		s.WriteDigital(*d)
+	}
+	if pwm := s.StopPWM; pwm != nil {
+		s.WritePWM(*pwm)
+	}
 	return nil
 }
 
