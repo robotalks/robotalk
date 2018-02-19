@@ -31,24 +31,12 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/robotalks/mqhub.go"
-  packages = ["mqhub"]
-  revision = "3c92e551de142e623edc065a2b137cd27f01fea9"
-
-[[projects]]
   name = "github.com/robotalks/talk"
   packages = [
     "common",
     "engine"
   ]
   revision = "22b10a4c48b52bb6f7b96775e981933123650fc8"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/robotalks/talk.contract"
-  packages = ["v0"]
-  revision = "c5f5f934790f7dcdf7d8a2c3e5b75baaeed5a69f"
 
 [[projects]]
   name = "github.com/stretchr/testify"
@@ -69,6 +57,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "19e1ea6bf9914f8ad5cf4f20deb590e97872727cd7dd0e4e0f4ac1bbb91ebaa4"
+  inputs-digest = "9e4493f963bce954216530434e7cc05c70e9303cbf1b355cbfa2fd51aa6d6edf"
   solver-name = "gps-cdcl"
   solver-version = 1
