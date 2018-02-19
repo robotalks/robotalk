@@ -13,9 +13,10 @@ targets:
     after:
       - toolchain
     watches:
-      - vendor/manifest
+      - Gopkg.lock
+      - Gopkg.toml
     cmds:
-      - gvt restore
+      - dep ensure
 
   build-linux-[arch:amd64,armhf]:
     description: build commands
@@ -26,7 +27,7 @@ targets:
     env:
       - RELEASE
     cmds:
-      - build-go.sh $[arch] talk-vision.so ./plugin
+      - CGO_ENABLED=1 build-go.sh $[arch] talk-vision.so -buildmode=plugin ./plugin
 
   build:
     description: build for all targets
