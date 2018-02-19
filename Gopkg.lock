@@ -11,21 +11,9 @@
   revision = "26b1f7c6dca048ea18dba3ccef106d20ca29e898"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/robotalks/mqhub.go"
-  packages = ["mqhub"]
-  revision = "3c92e551de142e623edc065a2b137cd27f01fea9"
-
-[[projects]]
   name = "github.com/robotalks/talk"
   packages = ["engine"]
   revision = "22b10a4c48b52bb6f7b96775e981933123650fc8"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/robotalks/talk.contract"
-  packages = ["v0"]
-  revision = "c5f5f934790f7dcdf7d8a2c3e5b75baaeed5a69f"
 
 [[projects]]
   branch = "v2"
@@ -36,6 +24,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "64bad81cce06cbb03aec920725883242b7d4fa1d305f6d3a0eea8a28e9c7c243"
+  inputs-digest = "7fa753a22e6630d7dbcdc8230e33b6f37f3a1ad11f1d978253f16f8a67905439"
   solver-name = "gps-cdcl"
   solver-version = 1
