@@ -2,20 +2,10 @@
 
 
 [[projects]]
-  name = "github.com/currantlabs/ble"
-  packages = [
-    ".",
-    "darwin",
-    "linux",
-    "linux/adv",
-    "linux/att",
-    "linux/gatt",
-    "linux/hci",
-    "linux/hci/cmd",
-    "linux/hci/evt",
-    "linux/hci/socket"
-  ]
-  revision = "0ebf31a6e39ffff68e811e0f139689f1ef81addc"
+  branch = "master"
+  name = "github.com/creack/goselect"
+  packages = ["."]
+  revision = "528c74964609a58f7c17471525659c9b71cd499b"
 
 [[projects]]
   branch = "master"
@@ -28,14 +18,32 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/go-ble/ble"
+  packages = [
+    ".",
+    "darwin",
+    "linux",
+    "linux/adv",
+    "linux/att",
+    "linux/gatt",
+    "linux/hci",
+    "linux/hci/cmd",
+    "linux/hci/evt",
+    "linux/hci/socket"
+  ]
+  revision = "cb19fdfd5cb4f8c420bedd0c9e1bfc4717a4be2e"
+
+[[projects]]
+  branch = "master"
   name = "github.com/hashicorp/errwrap"
   packages = ["."]
   revision = "7554cd9344cec97297fa6649b055a8c98c2a1e55"
 
 [[projects]]
+  branch = "master"
   name = "github.com/hashicorp/go-multierror"
   packages = ["."]
-  revision = "ed905158d87462226a13fe39ddf685ea65f1c11f"
+  revision = "b7773ae218740a7be65057fc60b366a49b538a44"
 
 [[projects]]
   name = "github.com/mattn/go-colorable"
@@ -62,7 +70,8 @@
 [[projects]]
   name = "github.com/pkg/errors"
   packages = ["."]
-  revision = "248dadf4e9068a0b3e79f02ed0a610d935de5302"
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
 
 [[projects]]
   name = "github.com/raff/goble"
@@ -87,9 +96,13 @@
   revision = "f19e41f79f8f006116f682c1af454591bc278ad4"
 
 [[projects]]
-  name = "github.com/tarm/serial"
-  packages = ["."]
-  revision = "37be519d49878d0098e34fb614136b81e6c87861"
+  branch = "master"
+  name = "go.bug.st/serial.v1"
+  packages = [
+    ".",
+    "unixutils"
+  ]
+  revision = "eae1344f9f90101f887b08d13391c34399f97873"
 
 [[projects]]
   name = "gobot.io/x/gobot"
@@ -97,22 +110,31 @@
     ".",
     "drivers/gpio",
     "drivers/i2c",
+    "drivers/spi",
     "platforms/ble",
     "platforms/firmata",
     "platforms/firmata/client",
     "platforms/raspi",
     "sysfs"
   ]
-  revision = "3c7285942ca0c510e83a14481f006229ed793452"
+  revision = "59aaba08eba8b081a9541f77aed19aba919437ac"
+  version = "v1.9.0"
 
 [[projects]]
-  name = "golang.org/x/net"
-  packages = ["context"]
-  revision = "b4690f45fa1cafc47b1c280c2e75116efe40cc13"
+  branch = "master"
+  name = "golang.org/x/exp"
+  packages = [
+    "io/spi",
+    "io/spi/driver"
+  ]
+  revision = "83bc9a11ae1a00a79c4e59fc5d965d21fe14e6bb"
 
 [[projects]]
   name = "golang.org/x/sys"
-  packages = ["unix"]
+  packages = [
+    "unix",
+    "windows"
+  ]
   revision = "30237cf4eefd639b184d1f2cb77a581ea0be8947"
 
 [[projects]]

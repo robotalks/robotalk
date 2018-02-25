@@ -1,60 +1,58 @@
-package adafruit
+package pwm
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/robotalks/mqhub.go/mqhub"
 	cmn "github.com/robotalks/talk-gobot/common"
 	talk "github.com/robotalks/talk.contract/v0"
 	eng "github.com/robotalks/talk/engine"
-	"gobot.io/x/gobot/drivers/i2c"
 )
 
 // Config defines servo configuration
 type Config struct {
 	Channel    int     `map:"channel"`
-	Freq       int     `map:"frequency"`
 	PulseMin   int     `map:"pulse-min"`
 	PulseMax   int     `map:"pulse-max"`
 	InitialPos float32 `map:"initial-pos"`
 	Reverse    bool    `map:"reverse"`
 }
 
-// Component is the implement of Adafruit HAT Component
+// State defines the state of this component
+type State struct {
+	Pos   float32 `json:"pos"`
+	Pulse uint    `json:"pulse"`
+}
+
+// Component is the implement of PWM driven servo
 type Component struct {
 	Config
-	Adapter cmn.Adapter `inject:"i2c" map:"-"`
+	Driver cmn.PWMDriver `inject:"pwm" map:"-"`
 
-	ref    talk.ComponentRef
-	device *i2c.AdafruitMotorHatDriver
-	state  *mqhub.DataPoint
-	pos    *mqhub.Reactor
-	pulse  *mqhub.Reactor
+	ref   talk.ComponentRef
+	state *mqhub.DataPoint
+	pos   *mqhub.Reactor
+	pulse *mqhub.Reactor
 }
 
 // NewComponent creates a Component
 func NewComponent(ref talk.ComponentRef) (talk.Component, error) {
 	s := &Component{
 		Config: Config{
-			Freq:     60,
 			PulseMin: 100,
 			PulseMax: 1000,
 		},
 		ref:   ref,
 		state: &mqhub.DataPoint{Name: "state", Retain: true},
 	}
-	s.pos = mqhub.ReactorAs("pos", s.SetPosition)
+	s.pos = mqhub.ReactorAs("pos", s.SetServoPos)
 	s.pulse = mqhub.ReactorAs("pulse", s.setPulse)
 
 	if err := eng.SetupComponent(s, ref); err != nil {
 		return nil, err
 	}
 
-	bus, ok := s.Adapter.Adaptor().(i2c.Connector)
-	if !ok {
-		return nil, fmt.Errorf("injection adapter of %s is not i2c", ref.MessagePath())
-	}
-	s.device = i2c.NewAdafruitMotorHatDriver(bus)
 	return s, nil
 }
 
@@ -74,46 +72,57 @@ func (s *Component) Endpoints() []mqhub.Endpoint {
 }
 
 // Start implements talk.LifecycleCtl
-func (s *Component) Start() (err error) {
-	err = s.device.Start()
-	if err == nil {
-		err = s.device.SetServoMotorFreq(float64(s.Freq))
-	}
-	if err == nil {
-		s.SetPosition(s.InitialPos)
-	}
-	return
+func (s *Component) Start() error {
+	return s.SetServoPos(s.InitialPos)
 }
 
 // Stop implements talk.LifecycleCtl
 func (s *Component) Stop() error {
-	return s.device.Halt()
+	return nil
 }
 
-// SetPosition sets absolute position from -1.0 ~ 1.0
-func (s *Component) SetPosition(pos float32) {
+// SetServoPos implements cmn.Servo
+func (s *Component) SetServoPos(pos float32) error {
 	if pos < -1.0 || pos > 1.0 {
-		return
+		return fmt.Errorf("invalid pos %f", pos)
 	}
 	if s.Reverse {
 		pos = -pos
 	}
-	pulse := s.PulseMin + int((pos+1.0)*float32(s.PulseMax-s.PulseMin)/2.0)
-	err := s.device.SetServoMotorPulse(byte(s.Channel), 0, int32(pulse))
-	if err == nil {
-		s.state.Update(pos)
+	pulse := uint(s.PulseMin + int((pos+1.0)*float32(s.PulseMax-s.PulseMin)/2.0))
+	if err := s.Driver.SetPWMPulse(s.Channel, 0, pulse); err != nil {
+		log.Printf("[%s] SetPosition(%f)[chn=%d, pulse=%d] err: %v",
+			s.ref.ComponentID(), pos, s.Channel, pulse, err)
+		return err
 	}
+
+	s.updateState(pos, pulse)
+	return nil
 }
 
 // for debug purpose only
-func (s *Component) setPulse(pulse int) {
-	s.device.SetServoMotorPulse(byte(s.Channel), 0, int32(pulse))
+func (s *Component) setPulse(value int) {
+	pulse := uint(value)
+	if err := s.Driver.SetPWMPulse(s.Channel, 0, pulse); err != nil {
+		log.Printf("[%s] SetPulse(%d)[chn=%d] err: %v",
+			s.ref.ComponentID(), pulse, s.Channel, err)
+		return
+	}
+	pos := float32(int(pulse)-s.PulseMin)*2.0/float32(s.PulseMax-s.PulseMin) - 1.0
+	s.updateState(pos, pulse)
+}
+
+func (s *Component) updateState(pos float32, pulse uint) {
+	if s.Reverse {
+		pos = -pos
+	}
+	s.state.Update(&State{Pos: pos, Pulse: pulse})
 }
 
 // Type is the Component type
-var Type = eng.DefineComponentType("gobot.i2c.servo.adafruit",
+var Type = eng.DefineComponentType("gobot.servo.pwm",
 	eng.ComponentFactoryFunc(func(ref talk.ComponentRef) (talk.Component, error) {
 		return NewComponent(ref)
 	})).
-	Describe("[GoBot] Adafruit Servo HAT (I2C)").
+	Describe("[GoBot] PWM Servo").
 	Register()
