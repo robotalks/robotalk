@@ -45,7 +45,10 @@ func (r *Runner) Start() error {
 	if err := r.Connector.Connect().Wait(); err != nil {
 		return err
 	}
-	return r.Spec.Connect(r.Connector)
+	if err := r.Spec.Connect(r.Connector); err != nil {
+		return err
+	}
+	return r.Spec.Start()
 }
 
 // Stop implements LifecycleCtl

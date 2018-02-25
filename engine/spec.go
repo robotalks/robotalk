@@ -137,16 +137,16 @@ func (s *Spec) Resolve() error {
 
 // Connect constructs all the component and establish endpoint connections
 func (s *Spec) Connect(connector mqhub.Connector) error {
-	errs := &errors.AggregatedError{}
+	var errs errors.AggregatedError
 	for _, spec := range s.ChildSpecs {
-		spec.resolveConnections(connector, errs)
+		spec.resolveConnections(connector, &errs)
 	}
 	if err := errs.Aggregate(); err != nil {
 		return err
 	}
 	for _, group := range s.initOrder {
 		for _, comp := range group {
-			comp.connect(errs)
+			comp.connect(&errs)
 		}
 	}
 	if err := errs.Aggregate(); err != nil {
@@ -160,13 +160,24 @@ func (s *Spec) Connect(connector mqhub.Connector) error {
 	return err
 }
 
+// Start starts all LifecycleCtl components
+func (s *Spec) Start() error {
+	var errs errors.AggregatedError
+	for _, group := range s.initOrder {
+		for _, comp := range group {
+			comp.start(&errs)
+		}
+	}
+	return errs.Aggregate()
+}
+
 // Disconnect tears off the components from mqhub
 func (s *Spec) Disconnect() error {
-	errs := &errors.AggregatedError{}
+	var errs errors.AggregatedError
 	for i := len(s.initOrder); i > 0; i-- {
 		group := s.initOrder[i-1]
 		for j := len(group); j > 0; j-- {
-			errs.Add(group[j-1].disconnect())
+			errs.Add(group[j-1].stop())
 		}
 	}
 	pub := s.publication
@@ -431,24 +442,30 @@ func (s *ComponentSpec) connect(errs *errors.AggregatedError) {
 	if factory == nil {
 		return
 	}
-	s.Logfln("%s Initialize", s.FullID())
+	s.Logfln("Initialize %s", s.FullID())
 	instance, err := factory.CreateComponent(s)
 	if !errs.Add(err) {
 		s.Instance = instance
-		if ctl, ok := instance.(talk.LifecycleCtl); ok {
-			s.Logfln("%s Start", s.FullID())
-			s.started = !errs.Add(ctl.Start())
-		}
 	}
 }
 
-func (s *ComponentSpec) disconnect() error {
+func (s *ComponentSpec) start(errs *errors.AggregatedError) {
+	if s.Instance == nil {
+		return
+	}
+	if ctl, ok := s.Instance.(talk.LifecycleCtl); ok {
+		s.Logfln("Start %s", s.FullID())
+		s.started = !errs.Add(ctl.Start())
+	}
+}
+
+func (s *ComponentSpec) stop() error {
 	inst := s.Instance
 	s.Instance = nil
 	if inst != nil && s.started {
 		s.started = false
 		if ctl, ok := inst.(talk.LifecycleCtl); ok {
-			s.Logfln("%s Stop", s.FullID())
+			s.Logfln("Stop %s", s.FullID())
 			return ctl.Stop()
 		}
 	}
