@@ -62,7 +62,7 @@ func (c *MapConfig) Load(stream io.Reader) error {
 	} else {
 		err = yaml.Unmarshal(content, c.Map)
 		if err == nil {
-			if m, ok := normalizeMap(c.Map).(map[string]interface{}); ok {
+			if m, ok := mapper.StringifyKeys(c.Map).(map[string]interface{}); ok {
 				c.Map = m
 			} else {
 				err = fmt.Errorf("invalid forrmat")
@@ -70,24 +70,4 @@ func (c *MapConfig) Load(stream io.Reader) error {
 		}
 	}
 	return err
-}
-
-func normalizeMap(val interface{}) interface{} {
-	switch v := val.(type) {
-	case []interface{}:
-		for n, item := range v {
-			v[n] = normalizeMap(item)
-		}
-	case map[interface{}]interface{}:
-		m := make(map[string]interface{})
-		for key, value := range v {
-			m[fmt.Sprintf("%v", key)] = normalizeMap(value)
-		}
-		val = m
-	case map[string]interface{}:
-		for key, value := range v {
-			v[key] = normalizeMap(value)
-		}
-	}
-	return val
 }
