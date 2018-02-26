@@ -11,7 +11,7 @@ import (
 	"gobot.io/x/gobot/drivers/gpio"
 )
 
-// Config defines led configuration
+// Config defines pin configuration
 type Config struct {
 	Pin            string `map:"pin"`
 	InitialDigital *bool  `map:"value"`
@@ -20,7 +20,7 @@ type Config struct {
 	StopPWM        *byte  `map:"stop-value"`
 }
 
-// Component is the implement of led Component
+// Component is the implement of pin Component
 type Component struct {
 	Config
 	Adapter cmn.Adapter `inject:"gpio" map:"-"`
