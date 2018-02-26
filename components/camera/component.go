@@ -54,7 +54,8 @@ func NewComponent(ref talk.ComponentRef) (talk.Component, error) {
 		},
 		stateDp: &mqhub.DataPoint{Name: "state", Retain: true},
 	}
-	err := eng.ConfigComponent(s, ref)
+	mapConf := &eng.MapConfig{Map: ref.ComponentConfig()}
+	err := mapConf.As(&s.config)
 	if err != nil {
 		return nil, err
 	}
