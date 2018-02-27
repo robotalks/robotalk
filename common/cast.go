@@ -40,11 +40,18 @@ func (c *UDPCast) Dial() (err error) {
 			return fmt.Errorf("bind address: %v", err)
 		}
 	}
-	c.remote, err = net.ResolveUDPAddr("udp", c.Address)
-	if err != nil {
-		return fmt.Errorf("cast address: %v", err)
+	if c.Address != "" {
+		c.remote, err = net.ResolveUDPAddr("udp", c.Address)
+		if err != nil {
+			return fmt.Errorf("cast address: %v", err)
+		}
+		if c.remote != nil && c.remote.IP == nil || c.remote.Port == 0 {
+			c.remote = nil
+		}
+	} else {
+		c.remote = nil
 	}
-	c.Conn, err = net.DialUDP("udp", laddr, c.remote)
+	c.Conn, err = net.ListenUDP("udp", laddr)
 	return err
 }
 
@@ -56,7 +63,7 @@ func (c *UDPCast) Close() error {
 // Cast implements CastTarget
 func (c *UDPCast) Cast(data []byte) mqhub.Future {
 	f := &mqhub.ImmediateFuture{}
-	if c.remote.IP != nil {
+	if c.remote != nil {
 		_, f.Error = c.Conn.WriteToUDP(data, c.remote)
 		if f.Error != nil {
 			println(f.Error.Error(), len(data))
@@ -67,15 +74,23 @@ func (c *UDPCast) Cast(data []byte) mqhub.Future {
 
 // HasTarget determines if remote address has been set
 func (c *UDPCast) HasTarget() bool {
-	return c.remote.IP != nil
+	return c.remote != nil
 }
 
 // SetRemoteAddr sets remote address
 func (c *UDPCast) SetRemoteAddr(addr string) error {
+	if addr == "" {
+		c.remote = nil
+		return nil
+	}
 	raddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
 		return err
 	}
-	c.remote = raddr
+	if raddr == nil || raddr.IP == nil || raddr.Port == 0 {
+		c.remote = nil
+	} else {
+		c.remote = raddr
+	}
 	return nil
 }
