@@ -101,7 +101,9 @@ func (s *Component) playTask(seqCh <-chan []float32, stopCh chan struct{}) {
 		case newSeq, ok := <-seqCh:
 			if !ok {
 				s.device.Off()
-				s.playing.Update(false)
+				if playing {
+					s.playing.Update(false)
+				}
 				close(stopCh)
 				return
 			}
