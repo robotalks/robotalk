@@ -1,13 +1,10 @@
 package camera
 
 import (
-	"bytes"
 	"fmt"
-	"image"
-	"image/jpeg"
 	"io"
+	"log"
 
-	"github.com/blackjack/webcam"
 	"github.com/robotalks/mqhub.go/mqhub"
 	talk "github.com/robotalks/talk.contract/v0"
 	cmn "github.com/robotalks/talk/common"
@@ -26,20 +23,25 @@ type Config struct {
 
 // State defines camera state
 type State struct {
-	Width  int    `json:"width"`
-	Height int    `json:"height"`
+	On     bool   `json:"on"`
+	Width  int    `json:"width,omitempty"`
+	Height int    `json:"height,omitempty"`
 	FourCC FourCC `json:"fourcc"`
 }
 
 // Component is the implementation
 type Component struct {
-	ref     talk.ComponentRef
-	config  Config
-	state   State
-	stateDp *mqhub.DataPoint
-	imageDp *mqhub.DataPoint
-	casts   []cmn.CastTarget
-	cam     *webcam.Webcam
+	ref      talk.ComponentRef
+	config   Config
+	settings Options
+	stateDp  *mqhub.DataPoint
+	recvDp   *mqhub.DataPoint
+	imageDp  *mqhub.DataPoint
+	onOff    *mqhub.Reactor
+	castTo   *mqhub.Reactor
+	udpCast  *cmn.UDPCast
+	casts    []cmn.CastTarget
+	stream   *Stream
 }
 
 // NewComponent creates a Component
@@ -53,18 +55,27 @@ func NewComponent(ref talk.ComponentRef) (talk.Component, error) {
 			Format: FourCCMJPG.String(),
 		},
 		stateDp: &mqhub.DataPoint{Name: "state", Retain: true},
+		recvDp:  &mqhub.DataPoint{Name: "receiver", Retain: true},
 	}
 	mapConf := &eng.MapConfig{Map: ref.ComponentConfig()}
 	err := mapConf.As(&s.config)
 	if err != nil {
 		return nil, err
 	}
-	s.state.FourCC, err = ParseFourCC(s.config.Format)
+
+	s.onOff = mqhub.ReactorAs("on", s.setOn)
+	s.castTo = mqhub.ReactorAs("cast", s.setCastTo)
+
+	s.settings.Device = s.config.Device
+	s.settings.FourCC, err = ParseFourCC(s.config.Format)
 	if err != nil {
 		return nil, err
 	}
-	s.state.Width = s.config.Width
-	s.state.Height = s.config.Height
+	s.settings.Width, s.settings.Height = s.config.Width, s.config.Height
+	s.settings.Quality = s.config.Quality
+
+	s.udpCast = &cmn.UDPCast{}
+	s.casts = []cmn.CastTarget{s.udpCast}
 
 	for t, val := range s.config.Casts {
 		switch t {
@@ -77,10 +88,8 @@ func NewComponent(ref talk.ComponentRef) (talk.Component, error) {
 			return nil, fmt.Errorf("unknown cast type %s", t)
 		}
 	}
-	if len(s.casts) == 0 {
-		s.imageDp = &mqhub.DataPoint{Name: "image"}
-		s.casts = append(s.casts, &cmn.DataPointCast{DP: s.imageDp})
-	}
+
+	s.stream = &Stream{Casts: s.casts}
 	return s, err
 }
 
@@ -96,7 +105,7 @@ func (s *Component) Type() talk.ComponentType {
 
 // Endpoints implements talk.Stateful
 func (s *Component) Endpoints() (endpoints []mqhub.Endpoint) {
-	endpoints = []mqhub.Endpoint{s.stateDp}
+	endpoints = []mqhub.Endpoint{s.onOff, s.castTo, s.stateDp, s.recvDp}
 	if s.imageDp != nil {
 		endpoints = append(endpoints, s.imageDp)
 	}
@@ -105,50 +114,22 @@ func (s *Component) Endpoints() (endpoints []mqhub.Endpoint) {
 
 // Start implements talk.LifecycleCtl
 func (s *Component) Start() error {
-	cam, err := webcam.Open(s.config.Device)
-	if err != nil {
-		return err
-	}
-
-	f, w, h, err := cam.SetImageFormat(
-		webcam.PixelFormat(s.state.FourCC),
-		uint32(s.state.Width),
-		uint32(s.state.Height))
-	if err != nil {
-		return err
-	}
-	if cc := FourCC(f); cc != s.state.FourCC {
-		cam.Close()
-		return fmt.Errorf("video format %s not supported, got %s",
-			s.state.FourCC.String(), cc.String())
-	}
-
-	if err = cam.StartStreaming(); err != nil {
-		cam.Close()
-		return err
-	}
-
 	for _, c := range s.casts {
 		if udpCast, ok := c.(*cmn.UDPCast); ok {
-			err = udpCast.Dial()
-			if err != nil {
-				cam.Close()
+			if err := udpCast.Dial(); err != nil {
 				return fmt.Errorf("start UDP cast error: %v", err)
 			}
 		}
 	}
-
-	s.cam = cam
-	s.state.Width = int(w)
-	s.state.Height = int(h)
-
-	go s.streaming(cam)
+	s.stream.Start()
+	s.stateDp.Update(&State{})
+	s.recvDp.Update("")
 	return nil
 }
 
 // Stop implements talk.LifecycleCtl
 func (s *Component) Stop() error {
-	s.cam.Close()
+	s.stream.Stop()
 	for _, c := range s.casts {
 		if closer, ok := c.(io.Closer); ok {
 			closer.Close()
@@ -157,51 +138,34 @@ func (s *Component) Stop() error {
 	return nil
 }
 
-func (s *Component) streaming(cam *webcam.Webcam) {
-	s.stateDp.Update(&s.state)
-	for {
-		err := cam.WaitForFrame(1)
+func (s *Component) setOn(on bool) {
+	if on {
+		opts, err := s.stream.On(s.settings)
 		if err != nil {
-			if _, ok := err.(*webcam.Timeout); !ok {
-				break
-			}
-			continue
+			log.Printf("[%s] Turn on camera err: %v", s.ref.ComponentID(), err)
+			return
 		}
-
-		frame, _ := cam.ReadFrame()
-		if frame == nil {
-			continue
+		s.stateDp.Update(&State{
+			On:     true,
+			Width:  opts.Width,
+			Height: opts.Height,
+			FourCC: opts.FourCC,
+		})
+	} else {
+		if err := s.stream.Off(); err != nil {
+			log.Printf("[%s] Turn off camera err: %v", s.ref.ComponentID(), err)
+			return
 		}
-
-		if s.state.FourCC == FourCCYUYV {
-			// need jpeg encoding
-			m := image.NewYCbCr(image.Rect(0, 0, s.state.Width, s.state.Height),
-				image.YCbCrSubsampleRatio422)
-			for i := 0; i < len(frame); i += 2 {
-				n := i >> 1
-				m.Y[n] = frame[i]
-				if (n & 1) == 0 {
-					m.Cb[n>>1] = frame[i+1]
-				} else {
-					m.Cr[n>>1] = frame[i+1]
-				}
-			}
-			var jpg bytes.Buffer
-			var opt *jpeg.Options
-			if q := s.config.Quality; q != nil {
-				opt = &jpeg.Options{Quality: *s.config.Quality}
-			}
-			if err = jpeg.Encode(&jpg, m, opt); err != nil {
-				// TODO
-			} else {
-				frame = jpg.Bytes()
-			}
-		}
-
-		for _, c := range s.casts {
-			c.Cast(frame)
-		}
+		s.stateDp.Update(&State{})
 	}
+}
+
+func (s *Component) setCastTo(addr string) {
+	if err := s.udpCast.SetRemoteAddr(addr); err != nil {
+		log.Printf("[%s] SetRemoteAddr(%s) err: %v", s.ref.ComponentID(), addr, err)
+		return
+	}
+	s.recvDp.Update(addr)
 }
 
 // Type is the Component type

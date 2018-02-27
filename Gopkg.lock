@@ -31,12 +31,13 @@
   version = "v1.0.0"
 
 [[projects]]
+  branch = "master"
   name = "github.com/robotalks/talk"
   packages = [
     "common",
     "engine"
   ]
-  revision = "22b10a4c48b52bb6f7b96775e981933123650fc8"
+  revision = "8de32c6edbef51444c6616c814a90c961f797be7"
 
 [[projects]]
   name = "github.com/stretchr/testify"
