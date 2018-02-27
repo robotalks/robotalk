@@ -27,25 +27,24 @@ type UDPCast struct {
 	BindAddr string
 	Address  string
 	Conn     *net.UDPConn
+
+	remote *net.UDPAddr
 }
 
 // Dial creates the UDP socket
 func (c *UDPCast) Dial() (err error) {
-	var laddr, raddr *net.UDPAddr
+	var laddr *net.UDPAddr
 	if c.BindAddr != "" {
 		laddr, err = net.ResolveUDPAddr("udp", c.BindAddr)
 		if err != nil {
 			return fmt.Errorf("bind address: %v", err)
 		}
 	}
-	raddr, err = net.ResolveUDPAddr("udp", c.Address)
+	c.remote, err = net.ResolveUDPAddr("udp", c.Address)
 	if err != nil {
 		return fmt.Errorf("cast address: %v", err)
 	}
-	if raddr.IP == nil {
-		raddr.IP = net.IPv4bcast
-	}
-	c.Conn, err = net.DialUDP("udp", laddr, raddr)
+	c.Conn, err = net.DialUDP("udp", laddr, c.remote)
 	return err
 }
 
@@ -56,9 +55,27 @@ func (c *UDPCast) Close() error {
 
 // Cast implements CastTarget
 func (c *UDPCast) Cast(data []byte) mqhub.Future {
-	_, err := c.Conn.Write(data)
-	if err != nil {
-		println(err.Error(), len(data))
+	f := &mqhub.ImmediateFuture{}
+	if c.remote.IP != nil {
+		_, f.Error = c.Conn.WriteToUDP(data, c.remote)
+		if f.Error != nil {
+			println(f.Error.Error(), len(data))
+		}
 	}
-	return &mqhub.ImmediateFuture{Error: err}
+	return f
+}
+
+// HasTarget determines if remote address has been set
+func (c *UDPCast) HasTarget() bool {
+	return c.remote.IP != nil
+}
+
+// SetRemoteAddr sets remote address
+func (c *UDPCast) SetRemoteAddr(addr string) error {
+	raddr, err := net.ResolveUDPAddr("udp", addr)
+	if err != nil {
+		return err
+	}
+	c.remote = raddr
+	return nil
 }
