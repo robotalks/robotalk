@@ -4,12 +4,7 @@
 [[projects]]
   branch = "master"
   name = "github.com/codingbrain/clix.go"
-  packages = [
-    "exts/bind",
-    "exts/help",
-    "flag",
-    "term"
-  ]
+  packages = ["exts/bind","exts/help","flag","term"]
   revision = "61f1fdb545586f63b3f11592bc791c91379cc734"
 
 [[projects]]
@@ -21,11 +16,14 @@
 [[projects]]
   branch = "master"
   name = "github.com/easeway/langx.go"
-  packages = [
-    "errors",
-    "mapper"
-  ]
+  packages = ["errors","mapper"]
   revision = "26b1f7c6dca048ea18dba3ccef106d20ca29e898"
+
+[[projects]]
+  name = "github.com/eclipse/paho.mqtt.golang"
+  packages = [".","packets"]
+  revision = "aff15770515e3c57fc6109da73d42b0d46f7f483"
+  version = "v1.1.0"
 
 [[projects]]
   name = "github.com/pmezard/go-difflib"
@@ -34,30 +32,50 @@
   version = "v1.0.0"
 
 [[projects]]
-  name = "github.com/stretchr/testify"
-  packages = ["assert"]
-  revision = "2402e8e7a02fc811447d11f881aa9746cdc57983"
+  branch = "master"
+  name = "github.com/robotalks/mqhub.go"
+  packages = ["mqtt","utils"]
+  revision = "3c92e551de142e623edc065a2b137cd27f01fea9"
 
 [[projects]]
+  name = "github.com/rs/xid"
+  packages = ["."]
+  revision = "02dd45c33376f85d1064355dc790dcc4850596b1"
+  version = "v1.1"
+
+[[projects]]
+  name = "github.com/stretchr/testify"
+  packages = ["assert"]
+  revision = "12b6f73e6084dad08a7c6e575284b177ecafbc71"
+  version = "v1.2.1"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "ede567c8e044a5913dad1d1af3696d9da953104c"
+  revision = "8c653846df49742c4c85ec37e5d9f8d3ba657895"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/net"
+  packages = ["proxy","websocket"]
+  revision = "cbe0f9307d0156177f9dd5dc85da1a31abc5f2fb"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
-  packages = ["unix"]
-  revision = "37707fdb30a5b38865cfb95e5aab41707daec7fd"
+  packages = ["unix","windows"]
+  revision = "f6cff0780e542efa0c8e864dc8fa522808f6a598"
 
 [[projects]]
-  branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "a5b47d31c556af34a302ce5d659e6fea44d90de0"
+  revision = "7f97868eec74b32b0982dd158a51a446d1da7eb5"
+  version = "v2.1.1"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "243940db58af8bc96dffeebae32b9eb856455457f22da1dde273ffc75f7403f8"
+  inputs-digest = "d6e04c65ae4ada3ff24fd347123a54c6fc2fbd532c8f813681dfb0e007a77bf7"
   solver-name = "gps-cdcl"
   solver-version = 1

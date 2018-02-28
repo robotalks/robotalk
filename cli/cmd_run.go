@@ -3,8 +3,8 @@ package cli
 import (
 	"os"
 
-	"github.com/robotalks/talk/engine"
-	"github.com/robotalks/talk/plugin"
+	"github.com/robotalks/talk/core/engine"
+	"github.com/robotalks/talk/core/plugin"
 )
 
 // RunCommand implements robotalk run

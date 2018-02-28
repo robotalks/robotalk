@@ -12,7 +12,7 @@ import (
 	"github.com/robotalks/talk/cli"
 
 	_ "github.com/robotalks/mqhub.go/mqtt"
-	_ "github.com/robotalks/talk/builtin"
+	_ "github.com/robotalks/talk/components/builtin"
 )
 
 // Version number

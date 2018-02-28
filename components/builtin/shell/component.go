@@ -4,9 +4,9 @@ import (
 	"os"
 	"os/exec"
 
-	talk "github.com/robotalks/talk.contract/v0"
-	cmn "github.com/robotalks/talk/common"
-	eng "github.com/robotalks/talk/engine"
+	"github.com/robotalks/talk/contract/v0"
+	cmn "github.com/robotalks/talk/core/common"
+	eng "github.com/robotalks/talk/core/engine"
 )
 
 // Component is the implementation
@@ -15,12 +15,12 @@ type Component struct {
 	Shell   []string `map:"shell"`
 	WorkDir string   `map:"workdir"`
 
-	ref talk.ComponentRef
+	ref v0.ComponentRef
 	cmd *exec.Cmd
 }
 
 // NewComponent creates a Component
-func NewComponent(ref talk.ComponentRef) (talk.Component, error) {
+func NewComponent(ref v0.ComponentRef) (v0.Component, error) {
 	s := &Component{ref: ref}
 	if err := eng.SetupComponent(s, ref); err != nil {
 		return nil, err
@@ -31,17 +31,17 @@ func NewComponent(ref talk.ComponentRef) (talk.Component, error) {
 	return s, nil
 }
 
-// Ref implements talk.Component
-func (s *Component) Ref() talk.ComponentRef {
+// Ref implements v0.Component
+func (s *Component) Ref() v0.ComponentRef {
 	return s.ref
 }
 
-// Type implements talk.Component
-func (s *Component) Type() talk.ComponentType {
+// Type implements v0.Component
+func (s *Component) Type() v0.ComponentType {
 	return Type
 }
 
-// Start implements talk.LifecycleCtl
+// Start implements v0.LifecycleCtl
 func (s *Component) Start() error {
 	cmd := exec.Command(s.Shell[0], append(s.Shell[1:], s.Command)...)
 	cmd.Dir = s.WorkDir
@@ -56,14 +56,14 @@ func (s *Component) Start() error {
 	return err
 }
 
-// Stop implements talk.LifecycleCtl
+// Stop implements v0.LifecycleCtl
 func (s *Component) Stop() error {
 	return cmn.StopCmd(s.cmd)
 }
 
 // Type is the Component type
 var Type = eng.DefineComponentType("shell",
-	eng.ComponentFactoryFunc(func(ref talk.ComponentRef) (talk.Component, error) {
+	eng.ComponentFactoryFunc(func(ref v0.ComponentRef) (v0.Component, error) {
 		return NewComponent(ref)
 	})).
 	Describe("[BuiltIn] Execute Shell Command").

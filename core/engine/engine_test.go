@@ -6,13 +6,13 @@ import (
 	"testing"
 
 	"github.com/robotalks/mqhub.go/mqhub"
-	talk "github.com/robotalks/talk.contract/v0"
+	"github.com/robotalks/talk/contract/v0"
 	"github.com/stretchr/testify/assert"
 )
 
-type TestTypes map[string]talk.ComponentType
+type TestTypes map[string]v0.ComponentType
 
-func (f TestTypes) ResolveComponentType(name string) (talk.ComponentType, error) {
+func (f TestTypes) ResolveComponentType(name string) (v0.ComponentType, error) {
 	return f[name], nil
 }
 
@@ -103,7 +103,7 @@ func (t *tester) Describe(componentID string) mqhub.Descriptor {
 	return &testDummyDesc{componentID: componentID}
 }
 
-func (t *tester) addTypes(types ...talk.ComponentType) {
+func (t *tester) addTypes(types ...v0.ComponentType) {
 	for _, typ := range types {
 		t.types[typ.Name()] = typ
 	}
@@ -142,10 +142,10 @@ func (t *specTester) component(id string) *ComponentSpec {
 
 type testInstanceAType struct{}
 
-func (t *testInstanceAType) Name() string                   { return "test.A" }
-func (t *testInstanceAType) Description() string            { return t.Name() }
-func (t *testInstanceAType) Factory() talk.ComponentFactory { return t }
-func (t *testInstanceAType) CreateComponent(ref talk.ComponentRef) (talk.Component, error) {
+func (t *testInstanceAType) Name() string                 { return "test.A" }
+func (t *testInstanceAType) Description() string          { return t.Name() }
+func (t *testInstanceAType) Factory() v0.ComponentFactory { return t }
+func (t *testInstanceAType) CreateComponent(ref v0.ComponentRef) (v0.Component, error) {
 	inst := &testInstanceA{ref: ref}
 	return inst, SetupComponent(inst, ref)
 }
@@ -154,20 +154,20 @@ var typeInstanceA = &testInstanceAType{}
 
 type testInstanceA struct {
 	Param string `map:"param"`
-	ref   talk.ComponentRef
+	ref   v0.ComponentRef
 }
 
-func (a *testInstanceA) Ref() talk.ComponentRef   { return a.ref }
-func (a *testInstanceA) Type() talk.ComponentType { return typeInstanceA }
-func (a *testInstanceA) Start() error             { return nil }
-func (a *testInstanceA) Stop() error              { return nil }
+func (a *testInstanceA) Ref() v0.ComponentRef   { return a.ref }
+func (a *testInstanceA) Type() v0.ComponentType { return typeInstanceA }
+func (a *testInstanceA) Start() error           { return nil }
+func (a *testInstanceA) Stop() error            { return nil }
 
 type testInstanceBType struct{}
 
-func (t *testInstanceBType) Name() string                   { return "test.B" }
-func (t *testInstanceBType) Description() string            { return t.Name() }
-func (t *testInstanceBType) Factory() talk.ComponentFactory { return t }
-func (t *testInstanceBType) CreateComponent(ref talk.ComponentRef) (talk.Component, error) {
+func (t *testInstanceBType) Name() string                 { return "test.B" }
+func (t *testInstanceBType) Description() string          { return t.Name() }
+func (t *testInstanceBType) Factory() v0.ComponentFactory { return t }
+func (t *testInstanceBType) CreateComponent(ref v0.ComponentRef) (v0.Component, error) {
 	inst := &testInstanceB{ref: ref}
 	return inst, SetupComponent(inst, ref)
 }
@@ -175,13 +175,13 @@ func (t *testInstanceBType) CreateComponent(ref talk.ComponentRef) (talk.Compone
 var typeInstanceB = &testInstanceBType{}
 
 type testInstanceB struct {
-	Ctl    talk.LifecycleCtl `inject:"a" json:"-"`
+	Ctl    v0.LifecycleCtl   `inject:"a" json:"-"`
 	Remote mqhub.EndpointRef `inject:"ref" json:"-"`
-	ref    talk.ComponentRef
+	ref    v0.ComponentRef
 }
 
-func (b *testInstanceB) Ref() talk.ComponentRef   { return b.ref }
-func (b *testInstanceB) Type() talk.ComponentType { return typeInstanceB }
+func (b *testInstanceB) Ref() v0.ComponentRef   { return b.ref }
+func (b *testInstanceB) Type() v0.ComponentType { return typeInstanceB }
 
 func TestSimpleComponents(t *testing.T) {
 	tester := makeTester(t)
@@ -236,31 +236,31 @@ type testOrderType struct {
 	stop  []string
 }
 
-func (t *testOrderType) Name() string                   { return "test.order" }
-func (t *testOrderType) Description() string            { return t.Name() }
-func (t *testOrderType) Factory() talk.ComponentFactory { return t }
-func (t *testOrderType) CreateComponent(ref talk.ComponentRef) (talk.Component, error) {
+func (t *testOrderType) Name() string                 { return "test.order" }
+func (t *testOrderType) Description() string          { return t.Name() }
+func (t *testOrderType) Factory() v0.ComponentFactory { return t }
+func (t *testOrderType) CreateComponent(ref v0.ComponentRef) (v0.Component, error) {
 	inst := &testOrder{typ: t, ref: ref}
 	return inst, SetupComponent(inst, ref)
 }
 
-func (t *testOrderType) onStart(ref talk.ComponentRef) {
+func (t *testOrderType) onStart(ref v0.ComponentRef) {
 	t.start = append(t.start, ref.(*ComponentSpec).FullID())
 }
 
-func (t *testOrderType) onStop(ref talk.ComponentRef) {
+func (t *testOrderType) onStop(ref v0.ComponentRef) {
 	t.stop = append(t.stop, ref.(*ComponentSpec).FullID())
 }
 
 type testOrder struct {
 	typ *testOrderType
-	ref talk.ComponentRef
+	ref v0.ComponentRef
 }
 
-func (a *testOrder) Ref() talk.ComponentRef   { return a.ref }
-func (a *testOrder) Type() talk.ComponentType { return a.typ }
-func (a *testOrder) Start() error             { a.typ.onStart(a.ref); return nil }
-func (a *testOrder) Stop() error              { a.typ.onStop(a.ref); return nil }
+func (a *testOrder) Ref() v0.ComponentRef   { return a.ref }
+func (a *testOrder) Type() v0.ComponentType { return a.typ }
+func (a *testOrder) Start() error           { a.typ.onStart(a.ref); return nil }
+func (a *testOrder) Stop() error            { a.typ.onStop(a.ref); return nil }
 
 func TestLifecycleOrders(t *testing.T) {
 	tester := makeTester(t)

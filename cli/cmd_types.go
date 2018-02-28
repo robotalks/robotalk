@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strings"
 
-	talk "github.com/robotalks/talk.contract/v0"
-	"github.com/robotalks/talk/plugin"
+	"github.com/robotalks/talk/contract/v0"
+	"github.com/robotalks/talk/core/plugin"
 )
 
 // TypesCommand implements robotalk types
@@ -20,8 +20,8 @@ func (c *TypesCommand) Execute(args []string) error {
 	if c.LoadModules {
 		plugin.LoadModules(c.ModulesDir)
 	}
-	types := talk.DefaultComponentTypeRegistry.RegisteredComponentTypes()
-	typesMap := make(map[string]talk.ComponentType)
+	types := v0.DefaultComponentTypeRegistry.RegisteredComponentTypes()
+	typesMap := make(map[string]v0.ComponentType)
 	names := make([]string, 0, len(types))
 	maxlen := 0
 	for _, t := range types {

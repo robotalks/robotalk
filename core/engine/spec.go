@@ -8,7 +8,7 @@ import (
 
 	"github.com/easeway/langx.go/errors"
 	"github.com/robotalks/mqhub.go/mqhub"
-	talk "github.com/robotalks/talk.contract/v0"
+	"github.com/robotalks/talk/contract/v0"
 )
 
 // Spec is the top-level document
@@ -19,8 +19,8 @@ type Spec struct {
 	Author      string                    `map:"author"`
 	ChildSpecs  map[string]*ComponentSpec `map:"components"`
 
-	TypeResolver talk.ComponentTypeResolver `map:"-"`
-	Logger       *log.Logger                `map:"-"`
+	TypeResolver v0.ComponentTypeResolver `map:"-"`
+	Logger       *log.Logger              `map:"-"`
 
 	initOrder   [][]*ComponentSpec
 	publication mqhub.Publication
@@ -50,8 +50,8 @@ type ComponentSpec struct {
 	LocalID            string                 `map:"-"`
 	Root               *Spec                  `map:"-"`
 	ParentSpec         *ComponentSpec         `map:"-"`
-	ResolvedType       talk.ComponentType     `map:"-"`
-	Instance           talk.Component         `map:"-"`
+	ResolvedType       v0.ComponentType       `map:"-"`
+	Instance           v0.Component           `map:"-"`
 	ResolvedInjections map[string]interface{} `map:"-"`
 
 	depends   map[string]*ComponentSpec
@@ -106,7 +106,7 @@ func (s *Spec) Resolve() error {
 
 	resolver := s.TypeResolver
 	if resolver == nil {
-		resolver = talk.DefaultComponentTypeRegistry
+		resolver = v0.DefaultComponentTypeRegistry
 	}
 	for _, spec := range s.ChildSpecs {
 		spec.resolveType(resolver, errs)
@@ -210,7 +210,7 @@ func (s *ComponentSpec) ID() string {
 // Endpoints implements mqhub.Component
 func (s *ComponentSpec) Endpoints() []mqhub.Endpoint {
 	if s.Instance != nil {
-		if stateful, ok := s.Instance.(talk.Stateful); ok {
+		if stateful, ok := s.Instance.(v0.Stateful); ok {
 			return stateful.Endpoints()
 		}
 	}
@@ -225,39 +225,39 @@ func (s *ComponentSpec) Components() (comps []mqhub.Component) {
 	return
 }
 
-// ComponentID implements talk.ComponentRef
+// ComponentID implements v0.ComponentRef
 func (s *ComponentSpec) ComponentID() string {
 	return s.ID()
 }
 
-// MessagePath implements talk.ComponentRef
+// MessagePath implements v0.ComponentRef
 func (s *ComponentSpec) MessagePath() string {
 	return s.FullID()
 }
 
-// ComponentConfig implements talk.ComponentRef
+// ComponentConfig implements v0.ComponentRef
 func (s *ComponentSpec) ComponentConfig() map[string]interface{} {
 	return s.Config
 }
 
-// Injections implements talk.ComponentRef
+// Injections implements v0.ComponentRef
 func (s *ComponentSpec) Injections() map[string]interface{} {
 	return s.ResolvedInjections
 }
 
-// Component implements talk.ComponentRef
-func (s *ComponentSpec) Component() talk.Component {
+// Component implements v0.ComponentRef
+func (s *ComponentSpec) Component() v0.Component {
 	return s.Instance
 }
 
-// Parent implements talk.ComponentRef
-func (s *ComponentSpec) Parent() talk.ComponentRef {
+// Parent implements v0.ComponentRef
+func (s *ComponentSpec) Parent() v0.ComponentRef {
 	return s.ParentSpec
 }
 
-// Children implements talk.ComponentRef
-func (s *ComponentSpec) Children() []talk.ComponentRef {
-	children := make([]talk.ComponentRef, 0, len(s.ChildSpecs))
+// Children implements v0.ComponentRef
+func (s *ComponentSpec) Children() []v0.ComponentRef {
+	children := make([]v0.ComponentRef, 0, len(s.ChildSpecs))
 	for _, spec := range s.ChildSpecs {
 		children = append(children, spec)
 	}
@@ -405,7 +405,7 @@ func (s *ComponentSpec) activate(all map[string]*ComponentSpec) (ready []*Compon
 	return
 }
 
-func (s *ComponentSpec) resolveType(resolver talk.ComponentTypeResolver, errs *errors.AggregatedError) {
+func (s *ComponentSpec) resolveType(resolver v0.ComponentTypeResolver, errs *errors.AggregatedError) {
 	if s.TypeName == "" {
 		s.ResolvedType = nil
 	} else {
@@ -453,7 +453,7 @@ func (s *ComponentSpec) start(errs *errors.AggregatedError) {
 	if s.Instance == nil {
 		return
 	}
-	if ctl, ok := s.Instance.(talk.LifecycleCtl); ok {
+	if ctl, ok := s.Instance.(v0.LifecycleCtl); ok {
 		s.Logfln("Start %s", s.FullID())
 		s.started = !errs.Add(ctl.Start())
 	}
@@ -464,7 +464,7 @@ func (s *ComponentSpec) stop() error {
 	s.Instance = nil
 	if inst != nil && s.started {
 		s.started = false
-		if ctl, ok := inst.(talk.LifecycleCtl); ok {
+		if ctl, ok := inst.(v0.LifecycleCtl); ok {
 			s.Logfln("Stop %s", s.FullID())
 			return ctl.Stop()
 		}

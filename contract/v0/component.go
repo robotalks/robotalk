@@ -1,4 +1,4 @@
-package talk
+package v0
 
 import "github.com/robotalks/mqhub.go/mqhub"
 

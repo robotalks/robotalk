@@ -5,25 +5,25 @@ import (
 	"reflect"
 
 	"github.com/easeway/langx.go/errors"
-	talk "github.com/robotalks/talk.contract/v0"
+	"github.com/robotalks/talk/contract/v0"
 )
 
 // ComponentFactoryFunc is func form of ComponentFactory
-type ComponentFactoryFunc func(talk.ComponentRef) (talk.Component, error)
+type ComponentFactoryFunc func(v0.ComponentRef) (v0.Component, error)
 
 // CreateComponent implements ComponentFactory
-func (f ComponentFactoryFunc) CreateComponent(ref talk.ComponentRef) (talk.Component, error) {
+func (f ComponentFactoryFunc) CreateComponent(ref v0.ComponentRef) (v0.Component, error) {
 	return f(ref)
 }
 
 // ConfigComponent is a helper to map configuration into component
-func ConfigComponent(comp talk.Component, ref talk.ComponentRef) error {
+func ConfigComponent(comp v0.Component, ref v0.ComponentRef) error {
 	conf := &MapConfig{Map: ref.ComponentConfig()}
 	return conf.As(comp)
 }
 
 // SetupComponent is a helper to initialize a component using reflect
-func SetupComponent(comp talk.Component, ref talk.ComponentRef) error {
+func SetupComponent(comp v0.Component, ref v0.ComponentRef) error {
 	v := reflect.Indirect(reflect.ValueOf(comp))
 	if v.Kind() != reflect.Struct {
 		panic("not a struct")
@@ -58,7 +58,7 @@ func SetupComponent(comp talk.Component, ref talk.ComponentRef) error {
 			panic("field " + f.Name + " must be settable")
 		}
 		iv := reflect.ValueOf(injection)
-		if ref, ok := injection.(talk.ComponentRef); ok {
+		if ref, ok := injection.(v0.ComponentRef); ok {
 			iv = reflect.ValueOf(ref.Component())
 		}
 		it := iv.Type()
@@ -81,9 +81,9 @@ func SetupComponent(comp talk.Component, ref talk.ComponentRef) error {
 }
 
 // RegisterComponentTypes registers named component types
-func RegisterComponentTypes(types ...talk.ComponentType) {
+func RegisterComponentTypes(types ...v0.ComponentType) {
 	for _, t := range types {
-		talk.DefaultComponentTypeRegistry.RegisterComponentType(t)
+		v0.DefaultComponentTypeRegistry.RegisterComponentType(t)
 	}
 }
 
@@ -91,21 +91,21 @@ func RegisterComponentTypes(types ...talk.ComponentType) {
 type CustomComponentType struct {
 	TypeName         string
 	TypeDesc         string
-	ComponentFactory talk.ComponentFactory
+	ComponentFactory v0.ComponentFactory
 }
 
-// Name implements talk.ComponentType
+// Name implements v0.ComponentType
 func (t *CustomComponentType) Name() string {
 	return t.TypeName
 }
 
-// Description implements talk.ComponentType
+// Description implements v0.ComponentType
 func (t *CustomComponentType) Description() string {
 	return t.TypeDesc
 }
 
-// Factory implements talk.ComponentType
-func (t *CustomComponentType) Factory() talk.ComponentFactory {
+// Factory implements v0.ComponentType
+func (t *CustomComponentType) Factory() v0.ComponentFactory {
 	return t.ComponentFactory
 }
 
@@ -122,6 +122,6 @@ func (t *CustomComponentType) Register() *CustomComponentType {
 }
 
 // DefineComponentType defines a custom instance type
-func DefineComponentType(name string, factory talk.ComponentFactory) *CustomComponentType {
+func DefineComponentType(name string, factory v0.ComponentFactory) *CustomComponentType {
 	return &CustomComponentType{TypeName: name, ComponentFactory: factory}
 }

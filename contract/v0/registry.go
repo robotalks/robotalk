@@ -1,4 +1,4 @@
-package talk
+package v0
 
 type mapRegistry map[string]ComponentType
 
