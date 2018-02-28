@@ -3,8 +3,8 @@ package firmata
 import (
 	"time"
 
-	talk "github.com/robotalks/talk.contract/v0"
-	eng "github.com/robotalks/talk/engine"
+	"github.com/robotalks/talk/contract/v0"
+	eng "github.com/robotalks/talk/core/engine"
 	"gobot.io/x/gobot"
 	plat "gobot.io/x/gobot/platforms/firmata"
 )
@@ -17,12 +17,12 @@ type Config struct {
 // Component is the implement of firmata Component
 type Component struct {
 	Config
-	ref     talk.ComponentRef
+	ref     v0.ComponentRef
 	adaptor *plat.Adaptor
 }
 
 // NewComponent creates a new Component
-func NewComponent(ref talk.ComponentRef) (talk.Component, error) {
+func NewComponent(ref v0.ComponentRef) (v0.Component, error) {
 	s := &Component{ref: ref}
 	if err := eng.SetupComponent(s, ref); err != nil {
 		return nil, err
@@ -31,22 +31,22 @@ func NewComponent(ref talk.ComponentRef) (talk.Component, error) {
 	return s, nil
 }
 
-// Ref implements talk.Component
-func (s *Component) Ref() talk.ComponentRef {
+// Ref implements v0.Component
+func (s *Component) Ref() v0.ComponentRef {
 	return s.ref
 }
 
-// Type implements talk.Component
-func (s *Component) Type() talk.ComponentType {
+// Type implements v0.Component
+func (s *Component) Type() v0.ComponentType {
 	return Type
 }
 
-// Start implements talk.LifecycleCtl
+// Start implements v0.LifecycleCtl
 func (s *Component) Start() error {
 	return firmataConnect(s.adaptor)
 }
 
-// Stop implements talk.LifecycleCtl
+// Stop implements v0.LifecycleCtl
 func (s *Component) Stop() error {
 	return s.adaptor.Finalize()
 }
@@ -75,7 +75,7 @@ func firmataConnect(adaptor *plat.Adaptor) error {
 
 // Type is the Component type
 var Type = eng.DefineComponentType("gobot.adapter.firmata",
-	eng.ComponentFactoryFunc(func(ref talk.ComponentRef) (talk.Component, error) {
+	eng.ComponentFactoryFunc(func(ref v0.ComponentRef) (v0.Component, error) {
 		return NewComponent(ref)
 	})).
 	Describe("[GoBot] Firmata Adapter").

@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/robotalks/mqhub.go/mqhub"
-	cmn "github.com/robotalks/talk-gobot/common"
-	talk "github.com/robotalks/talk.contract/v0"
-	eng "github.com/robotalks/talk/engine"
+	cmn "github.com/robotalks/talk/components/gobot/common"
+	"github.com/robotalks/talk/contract/v0"
+	eng "github.com/robotalks/talk/core/engine"
 	"gobot.io/x/gobot/drivers/aio"
 )
 
@@ -23,14 +23,14 @@ type Component struct {
 	Config
 	Adapter cmn.Adapter `inject:"io" map:"-"`
 
-	ref        talk.ComponentRef
+	ref        v0.ComponentRef
 	device     *aio.AnalogSensorDriver
 	state      *mqhub.DataPoint
 	prevReport *int
 }
 
 // NewComponent creates a Component
-func NewComponent(ref talk.ComponentRef) (talk.Component, error) {
+func NewComponent(ref v0.ComponentRef) (v0.Component, error) {
 	s := &Component{
 		Config: Config{Interval: 1000},
 		ref:    ref,
@@ -52,22 +52,22 @@ func NewComponent(ref talk.ComponentRef) (talk.Component, error) {
 	return s, nil
 }
 
-// Ref implements talk.Component
-func (s *Component) Ref() talk.ComponentRef {
+// Ref implements v0.Component
+func (s *Component) Ref() v0.ComponentRef {
 	return s.ref
 }
 
-// Type implements talk.Component
-func (s *Component) Type() talk.ComponentType {
+// Type implements v0.Component
+func (s *Component) Type() v0.ComponentType {
 	return Type
 }
 
-// Endpoints implements talk.Stateful
+// Endpoints implements v0.Stateful
 func (s *Component) Endpoints() []mqhub.Endpoint {
 	return []mqhub.Endpoint{s.state}
 }
 
-// Start implements talk.LifecycleCtl
+// Start implements v0.LifecycleCtl
 func (s *Component) Start() error {
 	val, err := s.device.Read()
 	if err == nil {
@@ -76,7 +76,7 @@ func (s *Component) Start() error {
 	return s.device.Start()
 }
 
-// Stop implements talk.LifecycleCtl
+// Stop implements v0.LifecycleCtl
 func (s *Component) Stop() error {
 	return s.device.Halt()
 }
@@ -93,7 +93,7 @@ func (s *Component) report(val int) {
 
 // Type is the Component type
 var Type = eng.DefineComponentType("gobot.analog",
-	eng.ComponentFactoryFunc(func(ref talk.ComponentRef) (talk.Component, error) {
+	eng.ComponentFactoryFunc(func(ref v0.ComponentRef) (v0.Component, error) {
 		return NewComponent(ref)
 	})).
 	Describe("[GoBot] Analog Sensor").

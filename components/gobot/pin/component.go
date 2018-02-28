@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/robotalks/mqhub.go/mqhub"
-	cmn "github.com/robotalks/talk-gobot/common"
-	talk "github.com/robotalks/talk.contract/v0"
-	eng "github.com/robotalks/talk/engine"
+	cmn "github.com/robotalks/talk/components/gobot/common"
+	"github.com/robotalks/talk/contract/v0"
+	eng "github.com/robotalks/talk/core/engine"
 	"gobot.io/x/gobot"
 	"gobot.io/x/gobot/drivers/gpio"
 )
@@ -25,14 +25,14 @@ type Component struct {
 	Config
 	Adapter cmn.Adapter `inject:"gpio" map:"-"`
 
-	ref          talk.ComponentRef
+	ref          v0.ComponentRef
 	device       *gpio.DirectPinDriver
 	writeDigital *mqhub.Reactor
 	writePWM     *mqhub.Reactor
 }
 
 // NewComponent creates a Component
-func NewComponent(ref talk.ComponentRef) (talk.Component, error) {
+func NewComponent(ref v0.ComponentRef) (v0.Component, error) {
 	s := &Component{ref: ref}
 	s.writeDigital = mqhub.ReactorAs("on", s.WriteDigital)
 	s.writePWM = mqhub.ReactorAs("pwm", s.WritePWM)
@@ -50,22 +50,22 @@ func NewComponent(ref talk.ComponentRef) (talk.Component, error) {
 	return s, nil
 }
 
-// Ref implements talk.Component
-func (s *Component) Ref() talk.ComponentRef {
+// Ref implements v0.Component
+func (s *Component) Ref() v0.ComponentRef {
 	return s.ref
 }
 
-// Type implements talk.Component
-func (s *Component) Type() talk.ComponentType {
+// Type implements v0.Component
+func (s *Component) Type() v0.ComponentType {
 	return Type
 }
 
-// Endpoints implements talk.Stateful
+// Endpoints implements v0.Stateful
 func (s *Component) Endpoints() []mqhub.Endpoint {
 	return []mqhub.Endpoint{s.writeDigital, s.writePWM}
 }
 
-// Start implements talk.LifecycleCtl
+// Start implements v0.LifecycleCtl
 func (s *Component) Start() error {
 	if d := s.InitialDigital; d != nil {
 		s.WriteDigital(*d)
@@ -76,7 +76,7 @@ func (s *Component) Start() error {
 	return nil
 }
 
-// Stop implements talk.LifecycleCtl
+// Stop implements v0.LifecycleCtl
 func (s *Component) Stop() error {
 	if d := s.StopDigital; d != nil {
 		s.WriteDigital(*d)
@@ -103,7 +103,7 @@ func (s *Component) WritePWM(pwm byte) {
 
 // Type is the Component type
 var Type = eng.DefineComponentType("gobot.gpio.pin",
-	eng.ComponentFactoryFunc(func(ref talk.ComponentRef) (talk.Component, error) {
+	eng.ComponentFactoryFunc(func(ref v0.ComponentRef) (v0.Component, error) {
 		return NewComponent(ref)
 	})).
 	Describe("[GoBot] GPIO Pin").
