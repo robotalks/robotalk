@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/robotalks/mqhub.go/mqhub"
-	"github.com/robotalks/talk-vision/utils"
-	talk "github.com/robotalks/talk.contract/v0"
-	eng "github.com/robotalks/talk/engine"
+	"github.com/robotalks/talk/components/vision/utils"
+	"github.com/robotalks/talk/contract/v0"
+	eng "github.com/robotalks/talk/core/engine"
 )
 
 // Dir is enumeration of servo direction
@@ -38,7 +38,7 @@ type Component struct {
 	Objects   mqhub.EndpointRef `inject:"objects" map:"-"`
 	Servo     mqhub.EndpointRef `inject:"servo" map:"-"`
 
-	ref talk.ComponentRef
+	ref v0.ComponentRef
 
 	dir                 Dir
 	mirror              bool
@@ -55,7 +55,7 @@ func mapAngle(a float32) (float32, error) {
 }
 
 // NewComponent creates a Component
-func NewComponent(ref talk.ComponentRef) (talk.Component, error) {
+func NewComponent(ref v0.ComponentRef) (v0.Component, error) {
 	s := &Component{ref: ref}
 	err := eng.SetupComponent(s, ref)
 	if err != nil {
@@ -108,17 +108,17 @@ func NewComponent(ref talk.ComponentRef) (talk.Component, error) {
 	return s, nil
 }
 
-// Ref implements talk.Component
-func (s *Component) Ref() talk.ComponentRef {
+// Ref implements v0.Component
+func (s *Component) Ref() v0.ComponentRef {
 	return s.ref
 }
 
-// Type implements talk.Component
-func (s *Component) Type() talk.ComponentType {
+// Type implements v0.Component
+func (s *Component) Type() v0.ComponentType {
 	return Type
 }
 
-// Start implements talk.LifecycleCtl
+// Start implements v0.LifecycleCtl
 func (s *Component) Start() (err error) {
 	if s.watcher, err = s.Objects.Watch(s.messageSink()); err != nil {
 		return
@@ -127,7 +127,7 @@ func (s *Component) Start() (err error) {
 	return
 }
 
-// Stop implements talk.LifecycleCtl
+// Stop implements v0.LifecycleCtl
 func (s *Component) Stop() error {
 	s.watcher.Close()
 	return nil
@@ -180,7 +180,7 @@ func (s *Component) messageSink() mqhub.MessageSink {
 
 // Type is the component type
 var Type = eng.DefineComponentType("vision.tracker.camera.stepping",
-	eng.ComponentFactoryFunc(func(ref talk.ComponentRef) (talk.Component, error) {
+	eng.ComponentFactoryFunc(func(ref v0.ComponentRef) (v0.Component, error) {
 		return NewComponent(ref)
 	})).
 	Describe("[Vision] Track Object using Simple Tiny Stepping").

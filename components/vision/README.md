@@ -1,3 +1,3 @@
 # Talk Vision Components
 
-This is Talk Plugin providing Vision related logics.
+This is RoboTalk components providing Vision related logics.
