@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/blackjack/webcam"
+  packages = [".","ioctl"]
+  revision = "dba29cd98b67338ba06da65a102550592eed5426"
+  version = "v0.3"
+
+[[projects]]
   branch = "master"
   name = "github.com/codingbrain/clix.go"
   packages = ["exts/bind","exts/help","flag","term"]
@@ -166,6 +172,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e5518867e38da02fc88bf2633a06dbddb938b2785cc5dd2dfcf951b1c903e9e8"
+  inputs-digest = "05c66d7bc8330f3cecf2992075a5a17d653c7caa0c3b760f4cd56beffb26f8f5"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -1,3 +1,3 @@
 # Talk V4L Components
 
-This is Talk Plugin providing Video4Linux support.
+This is RoboTalk component providing Video4Linux support.

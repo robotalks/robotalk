@@ -6,9 +6,9 @@ import (
 	"log"
 
 	"github.com/robotalks/mqhub.go/mqhub"
-	talk "github.com/robotalks/talk.contract/v0"
-	cmn "github.com/robotalks/talk/common"
-	eng "github.com/robotalks/talk/engine"
+	"github.com/robotalks/talk/contract/v0"
+	cmn "github.com/robotalks/talk/core/common"
+	eng "github.com/robotalks/talk/core/engine"
 )
 
 // Config defines camera configuration
@@ -31,7 +31,7 @@ type State struct {
 
 // Component is the implementation
 type Component struct {
-	ref      talk.ComponentRef
+	ref      v0.ComponentRef
 	config   Config
 	settings Options
 	stateDp  *mqhub.DataPoint
@@ -45,7 +45,7 @@ type Component struct {
 }
 
 // NewComponent creates a Component
-func NewComponent(ref talk.ComponentRef) (talk.Component, error) {
+func NewComponent(ref v0.ComponentRef) (v0.Component, error) {
 	s := &Component{
 		ref: ref,
 		config: Config{
@@ -93,17 +93,17 @@ func NewComponent(ref talk.ComponentRef) (talk.Component, error) {
 	return s, err
 }
 
-// Ref implements talk.Component
-func (s *Component) Ref() talk.ComponentRef {
+// Ref implements v0.Component
+func (s *Component) Ref() v0.ComponentRef {
 	return s.ref
 }
 
-// Type implements talk.Component
-func (s *Component) Type() talk.ComponentType {
+// Type implements v0.Component
+func (s *Component) Type() v0.ComponentType {
 	return Type
 }
 
-// Endpoints implements talk.Stateful
+// Endpoints implements v0.Stateful
 func (s *Component) Endpoints() (endpoints []mqhub.Endpoint) {
 	endpoints = []mqhub.Endpoint{s.onOff, s.castTo, s.stateDp, s.recvDp}
 	if s.imageDp != nil {
@@ -112,7 +112,7 @@ func (s *Component) Endpoints() (endpoints []mqhub.Endpoint) {
 	return
 }
 
-// Start implements talk.LifecycleCtl
+// Start implements v0.LifecycleCtl
 func (s *Component) Start() error {
 	for _, c := range s.casts {
 		if udpCast, ok := c.(*cmn.UDPCast); ok {
@@ -127,7 +127,7 @@ func (s *Component) Start() error {
 	return nil
 }
 
-// Stop implements talk.LifecycleCtl
+// Stop implements v0.LifecycleCtl
 func (s *Component) Stop() error {
 	s.stream.Stop()
 	for _, c := range s.casts {
@@ -170,7 +170,7 @@ func (s *Component) setCastTo(addr string) {
 
 // Type is the Component type
 var Type = eng.DefineComponentType("v4l2.camera",
-	eng.ComponentFactoryFunc(func(ref talk.ComponentRef) (talk.Component, error) {
+	eng.ComponentFactoryFunc(func(ref v0.ComponentRef) (v0.Component, error) {
 		return NewComponent(ref)
 	})).
 	Describe("[V4L2] Camera").

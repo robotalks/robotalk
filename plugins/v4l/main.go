@@ -1,7 +1,7 @@
 package main
 
 import "C"
-import _ "github.com/robotalks/talk-v4l/components"
+import _ "github.com/robotalks/talk/components/v4l"
 
 // Version number
 const Version = "0.1.0"

@@ -8,7 +8,7 @@ import (
 	"log"
 
 	"github.com/blackjack/webcam"
-	cmn "github.com/robotalks/talk/common"
+	cmn "github.com/robotalks/talk/core/common"
 )
 
 // Options is camera options
