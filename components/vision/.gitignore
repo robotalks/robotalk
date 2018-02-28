@@ -1,0 +1,9 @@
+bin/
+tmp/
+gen/
+out/
+_build/
+.hmake
+.hmakerc
+*.log
+/vendor
