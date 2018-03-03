@@ -9,10 +9,7 @@ import (
 	"github.com/codingbrain/clix.go/flag"
 	"github.com/codingbrain/clix.go/term"
 
-	"github.com/robotalks/talk/cli"
-
 	_ "github.com/robotalks/mqhub.go/mqtt"
-	_ "github.com/robotalks/talk/components/builtin"
 )
 
 // Version number
@@ -97,8 +94,8 @@ func main() {
 	cmd.Normalize()
 	cmd.Use(term.NewExt()).
 		Use(bind.NewExt().
-			Bind(&cli.RunCommand{}, "run").
-			Bind(&cli.TypesCommand{}, "types").
+			Bind(&RunCommand{}, "run").
+			Bind(&TypesCommand{}, "types").
 			Bind(&versionCommand{}, "version")).
 		Use(help.NewExt()).
 		Parse().

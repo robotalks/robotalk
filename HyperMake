@@ -21,8 +21,23 @@ targets:
     cmds:
       - dep ensure
 
-  build-linux-[arch:amd64,armhf]:
-    description: build commands
+  build-plugin-[name:gobot,v4l,vision]-[arch:amd64,armhf]:
+    description: build plugin $[name] for $[arch]
+    after:
+      - vendor
+    watches:
+      - 'vendor/**/**/*.go'
+      - 'contract/**/**/*.go'
+      - 'core/**/**/*.go'
+      - 'components/$[name]/**/**/*.go'
+      - 'plugins/$[name]/**/**/*.go'
+    env:
+      - RELEASE
+    cmds:
+      - CGO_ENABLED=1 build-go.sh $[arch] lib/talk-$[name].so -buildmode=plugin ./plugins/$[name]
+
+  build-cli-[arch:amd64,armhf]:
+    description: build CLI for $[arch]
     after:
       - vendor
     watches:
@@ -30,7 +45,18 @@ targets:
     env:
       - RELEASE
     cmds:
-      - CGO_ENABLED=1 build-go.sh $[arch] talk ./cmd/talk
+      - CGO_ENABLED=1 build-go.sh $[arch] bin/talk ./cmd/talk
+
+  build-cli-full-[arch:amd64,armhf]:
+    description: build all-in-one CLI for $[arch]
+    after:
+      - vendor
+    watches:
+      - '**/**/*.go'
+    env:
+      - RELEASE
+    cmds:
+      - build-go.sh $[arch] bin/talk-full ./cmd/talk
 
   build:
     description: build for all targets
