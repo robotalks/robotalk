@@ -18,6 +18,7 @@ type Config struct {
 	Height  int               `map:"height"`
 	Format  string            `map:"format"`
 	Quality *int              `map:"quality"`
+	AutoOn  bool              `map:"auto-on"`
 	Casts   map[string]string `map:"cast"`
 }
 
@@ -124,6 +125,10 @@ func (s *Component) Start() error {
 	s.stream.Start()
 	s.stateDp.Update(&State{})
 	s.recvDp.Update("")
+	log.Printf("[%s] Auto On: %v", s.ref.ComponentID(), s.config.AutoOn)
+	if s.config.AutoOn {
+		s.setOn(true)
+	}
 	return nil
 }
 
