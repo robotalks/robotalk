@@ -17,13 +17,19 @@
   branch = "master"
   name = "github.com/creack/goselect"
   packages = ["."]
-  revision = "528c74964609a58f7c17471525659c9b71cd499b"
+  revision = "58854f77ee8d858ce751b0a9bcc5533fef7bfa9e"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
   version = "v1.1.0"
+
+[[projects]]
+  name = "github.com/denisbrodbeck/machineid"
+  packages = ["."]
+  revision = "2777226d0340d8da18b49993ce2b4aeb9c1c6929"
+  version = "v0.8.0"
 
 [[projects]]
   branch = "master"
@@ -34,14 +40,14 @@
 [[projects]]
   name = "github.com/eclipse/paho.mqtt.golang"
   packages = [".","packets"]
-  revision = "aff15770515e3c57fc6109da73d42b0d46f7f483"
-  version = "v1.1.0"
+  revision = "36d01c2b4cbeb3d2a12063e4880ce30800af9560"
+  version = "v1.1.1"
 
 [[projects]]
   branch = "master"
   name = "github.com/go-ble/ble"
   packages = [".","darwin","linux","linux/adv","linux/att","linux/gatt","linux/hci","linux/hci/cmd","linux/hci/evt","linux/hci/socket"]
-  revision = "cb19fdfd5cb4f8c420bedd0c9e1bfc4717a4be2e"
+  revision = "721d2405efb7924028deef3b0105219209fba482"
 
 [[projects]]
   branch = "master"
@@ -136,42 +142,42 @@
 [[projects]]
   name = "gobot.io/x/gobot"
   packages = [".","drivers/aio","drivers/gpio","drivers/i2c","drivers/spi","platforms/ble","platforms/firmata","platforms/firmata/client","platforms/raspi","sysfs"]
-  revision = "59aaba08eba8b081a9541f77aed19aba919437ac"
-  version = "v1.9.0"
+  revision = "b2ddfe7895c4e414cd4e6a6734b31b12ea68ed8e"
+  version = "1.10.2"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "8c653846df49742c4c85ec37e5d9f8d3ba657895"
-
-[[projects]]
-  branch = "master"
-  name = "golang.org/x/exp"
-  packages = ["io/spi","io/spi/driver"]
-  revision = "83bc9a11ae1a00a79c4e59fc5d965d21fe14e6bb"
+  revision = "613d6eafa307c6881a737a3c35c0e312e8d3a8c5"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
-  packages = ["proxy","websocket"]
-  revision = "cbe0f9307d0156177f9dd5dc85da1a31abc5f2fb"
+  packages = ["internal/socks","proxy","websocket"]
+  revision = "5f9ae10d9af5b1c89ae6904293b14b064d4ada23"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
-  packages = ["unix","windows"]
-  revision = "f6cff0780e542efa0c8e864dc8fa522808f6a598"
+  packages = ["unix","windows","windows/registry"]
+  revision = "78d5f264b493f125018180c204871ecf58a2dce1"
 
 [[projects]]
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "7f97868eec74b32b0982dd158a51a446d1da7eb5"
-  version = "v2.1.1"
+  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
+  version = "v2.2.1"
+
+[[projects]]
+  branch = "master"
+  name = "periph.io/x/periph"
+  packages = [".","conn","conn/gpio","conn/gpio/gpioreg","conn/i2c","conn/i2c/i2creg","conn/pin","conn/spi","conn/spi/spireg","devices","host/fs","host/sysfs"]
+  revision = "9d35fc9a57c4bd99dc9560ceef69574dff4b966b"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "05c66d7bc8330f3cecf2992075a5a17d653c7caa0c3b760f4cd56beffb26f8f5"
+  inputs-digest = "b29c58648f85c5d9e55a88feb676f959d97163fe5906cb7e471926cfab196a5b"
   solver-name = "gps-cdcl"
   solver-version = 1

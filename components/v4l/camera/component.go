@@ -5,6 +5,8 @@ import (
 	"io"
 	"log"
 
+	"github.com/denisbrodbeck/machineid"
+
 	"github.com/robotalks/mqhub.go/mqhub"
 	"github.com/robotalks/talk/contract/v0"
 	cmn "github.com/robotalks/talk/core/common"
@@ -19,6 +21,8 @@ type Config struct {
 	Format  string            `map:"format"`
 	Quality *int              `map:"quality"`
 	AutoOn  bool              `map:"auto-on"`
+	WithSeq bool              `map:"with-seq"`
+	SeqSrc  string            `map:"seq-source"`
 	Casts   map[string]string `map:"cast"`
 }
 
@@ -64,6 +68,12 @@ func NewComponent(ref v0.ComponentRef) (v0.Component, error) {
 		return nil, err
 	}
 
+	if s.config.WithSeq && s.config.SeqSrc == "" {
+		if s.config.SeqSrc, err = machineid.ID(); err != nil {
+			return nil, fmt.Errorf("fail to get machine-id: %v", err)
+		}
+	}
+
 	s.onOff = mqhub.ReactorAs("on", s.setOn)
 	s.castTo = mqhub.ReactorAs("cast", s.setCastTo)
 
@@ -74,6 +84,11 @@ func NewComponent(ref v0.ComponentRef) (v0.Component, error) {
 	}
 	s.settings.Width, s.settings.Height = s.config.Width, s.config.Height
 	s.settings.Quality = s.config.Quality
+
+	if s.settings.FourCC == FourCCMJPG && s.config.WithSeq {
+		s.settings.WithSeq = s.config.WithSeq
+		s.settings.SeqSrc = s.config.SeqSrc
+	}
 
 	s.udpCast = &cmn.UDPCast{}
 	s.casts = []cmn.CastTarget{s.udpCast}

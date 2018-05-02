@@ -2,10 +2,12 @@ package camera
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"image"
 	"image/jpeg"
 	"log"
+	"time"
 
 	"github.com/blackjack/webcam"
 	cmn "github.com/robotalks/talk/core/common"
@@ -18,6 +20,8 @@ type Options struct {
 	Height  int
 	FourCC  FourCC
 	Quality *int
+	WithSeq bool
+	SeqSrc  string
 }
 
 // Camera is camera device
@@ -98,11 +102,21 @@ func (s *Camera) GetFrame() ([]byte, error) {
 		}
 		if err = jpeg.Encode(&jpg, m, opt); err != nil {
 			return nil, err
-		} else {
-			frame = jpg.Bytes()
 		}
+		frame = jpg.Bytes()
 	}
 
+	l := len(frame)
+	if s.WithSeq && len(frame) > 4 && frame[l-2] == 0xff && frame[l-1] == 0xd9 {
+		comment := fmt.Sprintf("id:%d@%s", time.Now().Unix(), s.SeqSrc)
+		var buf bytes.Buffer
+		buf.Write([]byte{0xff, 0xfe})
+		commentLen := uint16(len(comment))
+		binary.Write(&buf, binary.BigEndian, commentLen)
+		buf.WriteString(comment)
+		buf.Write([]byte{0xff, 0xd9})
+		frame = append(frame[:l-2], buf.Bytes()...)
+	}
 	return frame, nil
 }
 
